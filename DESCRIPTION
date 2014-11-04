@@ -1,12 +1,16 @@
 Package: bigmemoryExt
 Type: Package
-Title: What the package does (short line)
+Title: Bigmemory Extensions
 Version: 1.0
 Date: 2014-11-04
-Author: Your Name
-Maintainer: Your Name <your@email.com>
-Description: More about what it does (maybe more than one line)
+Author: Charles Determan Jr.
+Maintainer: Charles Determan Jr.<cdetermanjr@hotmail.com>
+Description: This is package is meant to provide additional capabilities to the
+    bigmemory package such as transpose.
 License: GPL (>= 2)
-Imports: Rcpp (>= 0.11.3)
-Depends: BH, bigmemory
+Imports:
+    Rcpp (>= 0.11.3)
+Depends:
+    BH,
+    bigmemory
 LinkingTo: Rcpp, BH, bigmemory
