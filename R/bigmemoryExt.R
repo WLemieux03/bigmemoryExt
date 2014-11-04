@@ -1,3 +1,5 @@
+#' @useDynLib bigmemoryExt
+
 cleanupcols <- function(cols=NULL, nc=NULL, colnames=NULL) {
   if (is.null(cols)) cols <- 1:nc
   else {

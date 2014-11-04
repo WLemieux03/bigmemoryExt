@@ -2,3 +2,4 @@
 
 S3method(model.frame,big.matrix)
 export(transposeBM)
+useDynLib(bigmemoryExt)
