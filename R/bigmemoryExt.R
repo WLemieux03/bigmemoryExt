@@ -101,6 +101,7 @@ transposeBM <- function(x, cols=NULL, rows=NULL,
 
 
 # Exact copy of bigmemory::deepcopy
+#' @export
 deepcopy2 <- function(x, cols=NULL, rows=NULL, 
                      y=NULL, type=NULL, separated=NULL,
                      backingfile=NULL, backingpath=NULL,
