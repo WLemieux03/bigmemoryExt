@@ -1,0 +1,4 @@
+useDynLib(test)
+export(transposeBM, deepcopy2)
+exportPattern("^[[:alpha:]]+")
+importFrom(Rcpp, evalCpp)
