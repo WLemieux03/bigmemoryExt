@@ -40,6 +40,26 @@ cleanuprows <- function(rows=NULL, nr=NULL, rownames=NULL) {
   return(rows)
 }
 
+
+#' @title Produce transpose of a "big.matrix"
+#' @description This is used to take the transpose of a big.matrix, with the new copy optionally filebacked
+#' @param x A \code{"big.matrix"}
+#' @param cols Possible subset of columns for the transpose; could be numeric, named, or logical
+#' @param rows Possible subset of rows for the transpose; could be numeric, named, or logical
+#' @param y Optional destinitation object (matrix or big.matrix); if not specified, a big.matrix will be created
+#' @param type preferably specified (e.g. "integer", "double", etc.)
+#' @param separated use separated column organization of the data instead of column-major organization; 
+#' use with caution if the number of columns is large.
+#' @param backingfile the root name for the file(s) for the cache of x.
+#' @param backingpath
+#' @param descriptorfile
+#' @param binarydescriptor
+#' @param shared
+#' @details This is need to make a tranpose of a \code{"big.matrix"} because R syntax won't access beyond the pointer.  
+#' Converting between normal 'matrix' and 'big.matrix' also is expensive to use the normal \code{"t"} function.  This
+#' also allows the user to optionally fileback the transposed object if it will be accessed several times.
+#' @return a transposed \code{"big.matrix"}
+#' @export
 transposeBM <- function(x, cols=NULL, rows=NULL, 
                      y=NULL, type=NULL, separated=NULL,
                      backingfile=NULL, backingpath=NULL,
@@ -58,7 +78,10 @@ transposeBM <- function(x, cols=NULL, rows=NULL,
     separated <- FALSE
   }
   if (is.null(y)) {
-    print(type)
+    
+    # Curiously not recognizing correct type, returns S4
+    # Workaround is to specify type in function call
+    #print(type)
     y <- big.matrix(nrow=length(cols), ncol=length(rows), type=type, init=NULL,
                     dimnames=dimnames(x), separated=separated,
                     backingfile=backingfile, backingpath=backingpath,
@@ -74,6 +97,8 @@ transposeBM <- function(x, cols=NULL, rows=NULL,
   return(y)
 }
 
+
+# Exact copy of bigmemory::deepcopy
 deepcopy2 <- function(x, cols=NULL, rows=NULL, 
                      y=NULL, type=NULL, separated=NULL,
                      backingfile=NULL, backingpath=NULL,
@@ -92,6 +117,7 @@ deepcopy2 <- function(x, cols=NULL, rows=NULL,
     separated <- FALSE
   }
   if (is.null(y)) {
+    # Same issue as above
     print(type)
     y <- big.matrix(nrow=length(rows), ncol=length(cols), type=type, init=NULL,
                     dimnames=dimnames(x), separated=separated,
