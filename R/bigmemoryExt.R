@@ -61,6 +61,7 @@ cleanuprows <- function(rows=NULL, nr=NULL, rownames=NULL) {
 #' Converting between normal 'matrix' and 'big.matrix' also is expensive to use the normal \code{"t"} function.  This
 #' also allows the user to optionally fileback the transposed object if it will be accessed several times.
 #' @return a transposed \code{"big.matrix"}
+#' @importMethodsFrom bigmemory typeof
 #' @export
 transposeBM <- function(x, cols=NULL, rows=NULL, 
                      y=NULL, type=NULL, separated=NULL,
@@ -80,10 +81,6 @@ transposeBM <- function(x, cols=NULL, rows=NULL,
     separated <- FALSE
   }
   if (is.null(y)) {
-    
-    # Curiously not recognizing correct type, returns S4
-    # Workaround is to specify type in function call
-    #print(type)
     y <- big.matrix(nrow=length(cols), ncol=length(rows), type=type, init=NULL,
                     dimnames=dimnames(x), separated=separated,
                     backingfile=backingfile, backingpath=backingpath,
@@ -92,44 +89,6 @@ transposeBM <- function(x, cols=NULL, rows=NULL,
   }
   if (is.big.matrix(x) && is.big.matrix(y))
     .Call("CtransposeMatrix", x@address, y@address, as.double(rows), as.double(cols), 
-          getOption("bigmemory.typecast.warning"))
-  else
-    for (i in 1:length(cols)) y[,i] <- x[rows,cols[i]]
-  
-  return(y)
-}
-
-
-# Exact copy of bigmemory::deepcopy
-#' @export
-deepcopy2 <- function(x, cols=NULL, rows=NULL, 
-                     y=NULL, type=NULL, separated=NULL,
-                     backingfile=NULL, backingpath=NULL,
-                     descriptorfile=NULL, binarydescriptor=FALSE,
-                     shared=TRUE)
-{
-  cols <- cleanupcols(cols, ncol(x), colnames(x))
-  rows <- cleanuprows(rows, nrow(x), rownames(x))
-  if (nrow(x) > 2^31-1)
-    stop(paste("Too many rows to copy at this point in time;",
-               "this may be fixed in the future."))
-  if (is.null(type)) type <- typeof(x)
-  if (is.big.matrix(x)) {
-    if (is.null(separated)) separated <- is.separated(x)
-  } else {
-    separated <- FALSE
-  }
-  if (is.null(y)) {
-    # Same issue as above
-    print(type)
-    y <- big.matrix(nrow=length(rows), ncol=length(cols), type=type, init=NULL,
-                    dimnames=dimnames(x), separated=separated,
-                    backingfile=backingfile, backingpath=backingpath,
-                    descriptorfile=descriptorfile,
-                    binarydescriptor=binarydescriptor, shared)
-  }
-  if (is.big.matrix(x) && is.big.matrix(y))
-    .Call("CDeepCopy", x@address, y@address, as.double(rows), as.double(cols), 
           getOption("bigmemory.typecast.warning"))
   else
     for (i in 1:length(cols)) y[,i] <- x[rows,cols[i]]

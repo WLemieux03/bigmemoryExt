@@ -3,4 +3,5 @@
 S3method(model.frame,big.matrix)
 export(deepcopy2)
 export(transposeBM)
+importMethodsFrom(bigmemory,typeof)
 useDynLib(bigmemoryExt)
