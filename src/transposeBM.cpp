@@ -65,7 +65,7 @@ void transposeBM(BigMatrix *pInMat, BigMatrix *pOutMat, SEXP rowInds, SEXP colIn
 
 extern "C"
 {
-  #define CALL_DEEP_COPY_2(IN_CTYPE, IN_ACCESSOR, OUT_ACCESSOR) \
+  #define CALL_transpose_2(IN_CTYPE, IN_ACCESSOR, OUT_ACCESSOR) \
     switch(pOutMat->matrix_type()) \
     { \
       case 1: \
@@ -86,20 +86,20 @@ extern "C"
         break; \
     }
 
-  #define CALL_DEEP_COPY_1(IN_ACCESSOR, OUT_ACCESSOR) \
+  #define CALL_transpose_1(IN_ACCESSOR, OUT_ACCESSOR) \
     switch(pInMat->matrix_type()) \
     { \
       case 1: \
-        CALL_DEEP_COPY_2(char, IN_ACCESSOR, OUT_ACCESSOR) \
+        CALL_transpose_2(char, IN_ACCESSOR, OUT_ACCESSOR) \
         break; \
       case 2: \
-        CALL_DEEP_COPY_2(short, IN_ACCESSOR, OUT_ACCESSOR) \
+        CALL_transpose_2(short, IN_ACCESSOR, OUT_ACCESSOR) \
         break; \
       case 4: \
-        CALL_DEEP_COPY_2(int, IN_ACCESSOR, OUT_ACCESSOR) \
+        CALL_transpose_2(int, IN_ACCESSOR, OUT_ACCESSOR) \
         break; \
       case 8: \
-        CALL_DEEP_COPY_2(double, IN_ACCESSOR, OUT_ACCESSOR) \
+        CALL_transpose_2(double, IN_ACCESSOR, OUT_ACCESSOR) \
         break; \
     }
       
@@ -127,19 +127,19 @@ extern "C"
     
     // Not sure if there is a better way to do these function calls
     if (pInMat->separated_columns() && pOutMat->separated_columns()) {
-      CALL_DEEP_COPY_1(SepMatrixAccessor, SepMatrixAccessor)
+      CALL_transpose_1(SepMatrixAccessor, SepMatrixAccessor)
     }
     else if(pInMat->separated_columns() && !(pOutMat->separated_columns()))
     {
-      CALL_DEEP_COPY_1(SepMatrixAccessor, MatrixAccessor)
+      CALL_transpose_1(SepMatrixAccessor, MatrixAccessor)
     }
     else if(!(pInMat->separated_columns()) && pOutMat->separated_columns())
     {
-      CALL_DEEP_COPY_1(MatrixAccessor, SepMatrixAccessor)
+      CALL_transpose_1(MatrixAccessor, SepMatrixAccessor)
     }
     else
     {
-      CALL_DEEP_COPY_1(MatrixAccessor, MatrixAccessor)
+      CALL_transpose_1(MatrixAccessor, MatrixAccessor)
     }
 
     return R_NilValue;
