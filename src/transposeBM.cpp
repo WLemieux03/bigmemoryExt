@@ -30,8 +30,6 @@ void transposeBM(BigMatrix *pInMat, BigMatrix *pOutMat, SEXP rowInds, SEXP colIn
   in_BMAccessorType inMat( *pInMat );
   out_BMAccessorType outMat( *pOutMat );
   
-  double *pRows = NUMERIC_DATA(rowInds);
-  double *pCols = NUMERIC_DATA(colInds);
   index_type nRows = GET_LENGTH(rowInds);
   index_type nCols = GET_LENGTH(colInds);
   
@@ -42,23 +40,12 @@ void transposeBM(BigMatrix *pInMat, BigMatrix *pOutMat, SEXP rowInds, SEXP colIn
   
   index_type i = 0;
   index_type j = 0;
-  in_CType *pInColumn;
-  out_CType *pOutColumn;
   
   for(i = 0; i < nRows; i++) {
     for(j=0; j < nCols; j++){
       outMat[i][j] = inMat[j][i];
     }
   }
-  
-//  for (i = 0; i < nRows; ++i) {
-//    pInColumn = inMat[static_cast<index_type>(pCols[i])-1];
-//    pOutColumn = outMat[i];
-//    for (j = 0; j < nCols; ++j) {
-//      pOutColumn[j] = static_cast<out_CType>(
-//        pInColumn[static_cast<index_type>(pRows[j])-1]);
-//    }
-//  }
   
   return;
 }
