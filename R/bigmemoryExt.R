@@ -97,6 +97,40 @@ transposeBM <- function(x, cols=NULL, rows=NULL,
   return(y)
 }
 
+#' @title 'Big.Matrix' In-Place-Transpose
+#' @description This is used to apply and in-place transpose of a \code{"big.matrix"}.  It modifies the
+#' original 'big.matrix' to its' corresponding tranpose.  WARNING!!! This changes your big.matrix object
+#' and therefore the original structure is not accessible at the same time.  You can always convert back
+#' to the original structure with this same function.
+#' @param x A \code{"big.matrix"}
+#' @param direction Specify which direction of transpose
+#' @return Nothing, the \code{"big.matrix"} object has been modified.
+#' @example Examples/iptExample.R
+#' @export
+iptBM <- function(x, direction)
+{
+  if(!is.big.matrix(x)){
+    stop("Error: x must be of class 'big.matrix'")
+  }
+  if(!direction %in% c("r2c", "c2r")){
+    stop("Error: 'direction' must by 'r2c' or 'c2r'.")
+  }
+  
+  # Call in-place-transpose
+  .Call('CIPTMatrix', x@address)
+  
+  # resize big.matrix to transpose dimensions
+  switch(direction,
+    c2r = resizeBM(x, -1, 1),
+    r2c = resizeBM(x, 1, -1)
+  )
+#   if(direction == 'r2c'){
+#     resizeBM(x, 1, -1)
+#   }else if(direction == {
+#     resizeBM(x, -1, 1) 
+#   }
+}
+
 #' @title Subtract a "big.matrix" from an integer
 #' @description This was written to provide subtraction capabilities to big.matrix objects.  The \code{"daxpy"}
 #' function only works with equal size matrices.  To avoid making another large matrix, this a wrapper of C++ around the 
@@ -241,3 +275,28 @@ cbindBM <- function(x, y, binding="right",
   
   return(z)
 }
+
+# # Working here to create cbinding function in place
+# #' @export
+# cbindX <- function(x, y){
+#   if(class(x) != "big.matrix"){
+#     stop("x is not a 'big.matrix'")
+#   }
+#   if(class(y) != "matrix" & class(y) != "big.matrix"){
+#     newCols <- 1
+#   }else{
+#     newCols <- ncol(y)
+#   }
+#  
+#   resizeBM(x, nrow(x), newCols)
+#   
+#   x[,newCols] <- y
+#   
+# #   if(is.big.matrix(x) & is.big.matrix(y)){
+# #     .Call("CBINDMatrix", x@address, y@address)
+# #   }
+# 
+# }
+
+
+
