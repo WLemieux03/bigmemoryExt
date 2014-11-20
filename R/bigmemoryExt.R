@@ -15,7 +15,7 @@ cleanupcols <- function(cols=NULL, nc=NULL, colnames=NULL) {
                    "columns of the matrix."))
       cols <- which(cols)
     }
-    tempj <- .Call("CCleanIndices", as.double(cols), as.double(nc))
+    tempj <- .Call("CCleanIndices", as.double(cols), as.double(nc), PACKAGE="bigmemory")
     if (is.null(tempj[[1]])) stop("Illegal column index usage in extraction.\n")
     if (tempj[[1]]) cols <- tempj[[2]]
   }
@@ -36,7 +36,7 @@ cleanuprows <- function(rows=NULL, nr=NULL, rownames=NULL) {
                    "rows of the matrix."))
       rows <- which(rows)
     }
-    tempj <- .Call("CCleanIndices", as.double(rows), as.double(nr))
+    tempj <- .Call("CCleanIndices", as.double(rows), as.double(nr), PACKAGE="bigmemory")
     if (is.null(tempj[[1]])) stop("Illegal row index usage in extraction.\n")
     if (tempj[[1]]) rows <- tempj[[2]]
   }
@@ -54,10 +54,15 @@ cleanuprows <- function(rows=NULL, nr=NULL, rownames=NULL) {
 #' @param separated use separated column organization of the data instead of column-major organization; 
 #' use with caution if the number of columns is large.
 #' @param backingfile the root name for the file(s) for the cache of x.
-#' @param backingpath
-#' @param descriptorfile
-#' @param binarydescriptor
-#' @param shared
+#' @param backingpath the path to the directory containing the file backing cache
+#' @param descriptorfile the name of the file to hold the backingfile description, for subsequent use with 
+#' \code{\link[bigmemory]{attach.big.matrix}}; if NULL, the backingfile is used as the root part of the descriptor file name. 
+#' The descriptor file is placed in the same directory as the backing files.
+#' @param binarydescriptor the flag to specify if the binary RDS format should be used for the backingfile description, 
+#' for subsequent use with \code{\link[bigmemory]{attach.big.matrix}}; if NULL of FALSE, the dput() file format is used.
+#' @param shared TRUE by default, and always TRUE if the big.matrix is file-backed. For a non-filebacked big.matrix, 
+#' shared=FALSE uses non-shared memory, which can be more stable for large (say, >50% of RAM) objects. Shared memory 
+#' allocation can sometimes fail in such cases due to exhausted shared-memory resources in the system.
 #' @details This is need to make a tranpose of a \code{"big.matrix"} because R syntax won't access beyond the pointer.  
 #' Converting between normal 'matrix' and 'big.matrix' also is expensive to use the normal \code{"t"} function.  This
 #' also allows the user to optionally fileback the transposed object if it will be accessed several times.
@@ -124,12 +129,13 @@ iptBM <- function(x, direction)
     c2r = resizeBM(x, -1, 1),
     r2c = resizeBM(x, 1, -1)
   )
-#   if(direction == 'r2c'){
-#     resizeBM(x, 1, -1)
-#   }else if(direction == {
-#     resizeBM(x, -1, 1) 
-#   }
 }
+
+# I would like to have the following 'subtractIntBM' converted an 'Arith' method but it would currently
+# conflict with bigalgebra where the signature recognizes numeric but expects a matrix
+# of equivalent size.  As such, a simple call like '1-BM' results in the following error:
+# Error in check_matrix(X, classes = c("big.matrix", "matrix", "vector",  : 
+#   The matrix type is not correct
 
 #' @title Subtract a "big.matrix" from an integer
 #' @description This was written to provide subtraction capabilities to big.matrix objects.  The \code{"daxpy"}
@@ -145,10 +151,15 @@ iptBM <- function(x, direction)
 #' @param separated use separated column organization of the data instead of column-major organization; 
 #' use with caution if the number of columns is large.
 #' @param backingfile the root name for the file(s) for the cache of x.
-#' @param backingpath
-#' @param descriptorfile
-#' @param binarydescriptor
-#' @param shared
+#' @param backingpath the path to the directory containing the file backing cache
+#' @param descriptorfile the name of the file to hold the backingfile description, for subsequent use with 
+#' \code{\link[bigmemory]{attach.big.matrix}}; if NULL, the backingfile is used as the root part of the descriptor file name. 
+#' The descriptor file is placed in the same directory as the backing files.
+#' @param binarydescriptor the flag to specify if the binary RDS format should be used for the backingfile description, 
+#' for subsequent use with \code{\link[bigmemory]{attach.big.matrix}}; if NULL of FALSE, the dput() file format is used.
+#' @param shared TRUE by default, and always TRUE if the big.matrix is file-backed. For a non-filebacked big.matrix, 
+#' shared=FALSE uses non-shared memory, which can be more stable for large (say, >50% of RAM) objects. Shared memory 
+#' allocation can sometimes fail in such cases due to exhausted shared-memory resources in the system.
 #' @return a \code{"big.matrix"}
 #' @export
 subtractIntBM <- function(x, value, cols=NULL, rows=NULL, 
@@ -176,8 +187,8 @@ subtractIntBM <- function(x, value, cols=NULL, rows=NULL,
                     binarydescriptor=binarydescriptor, shared)
   }
   if (is.big.matrix(x) && is.big.matrix(y))
-    .Call("CsubtIntBM", x@address, y@address, as.double(rows), as.double(cols), as.integer(value),
-          getOption("bigmemory.typecast.warning"))
+    .Call("CsubtIntBM", x@address, y@address, as.double(rows), as.double(cols),
+          getOption("bigmemory.typecast.warning"), as.integer(value))
   else
     for (i in 1:length(cols)) y[,i] <- x[rows,cols[i]]
   
@@ -199,10 +210,15 @@ subtractIntBM <- function(x, value, cols=NULL, rows=NULL,
 #' @param separated use separated column organization of the data instead of column-major organization; 
 #' use with caution if the number of columns is large.
 #' @param backingfile the root name for the file(s) for the cache of x.
-#' @param backingpath
-#' @param descriptorfile
-#' @param binarydescriptor
-#' @param shared
+#' @param backingpath the path to the directory containing the file backing cache
+#' @param descriptorfile the name of the file to hold the backingfile description, for subsequent use with 
+#' \code{\link[bigmemory]{attach.big.matrix}}; if NULL, the backingfile is used as the root part of the descriptor file name. 
+#' The descriptor file is placed in the same directory as the backing files.
+#' @param binarydescriptor the flag to specify if the binary RDS format should be used for the backingfile description, 
+#' for subsequent use with \code{\link[bigmemory]{attach.big.matrix}}; if NULL of FALSE, the dput() file format is used.
+#' @param shared TRUE by default, and always TRUE if the big.matrix is file-backed. For a non-filebacked big.matrix, 
+#' shared=FALSE uses non-shared memory, which can be more stable for large (say, >50% of RAM) objects. Shared memory 
+#' allocation can sometimes fail in such cases due to exhausted shared-memory resources in the system.
 #' @details This is simply a wrapper for \code{"big.matrix"} objects whereby a new \code{"big.matrix"} is
 #' initialized and subsequently filled with the submitted arguments (optionally filtered).
 #' @return a \code{"big.matrix"}
@@ -276,27 +292,151 @@ cbindBM <- function(x, y, binding="right",
   return(z)
 }
 
-# # Working here to create cbinding function in place
-# #' @export
-# cbindX <- function(x, y){
-#   if(class(x) != "big.matrix"){
-#     stop("x is not a 'big.matrix'")
-#   }
-#   if(class(y) != "matrix" & class(y) != "big.matrix"){
-#     newCols <- 1
-#   }else{
-#     newCols <- ncol(y)
-#   }
-#  
-#   resizeBM(x, nrow(x), newCols)
-#   
-#   x[,newCols] <- y
-#   
-# #   if(is.big.matrix(x) & is.big.matrix(y)){
-# #     .Call("CBINDMatrix", x@address, y@address)
-# #   }
-# 
-# }
+#' @title cbind 'in-place' for class "big.matrix"
+#' @description This is used to bind columns to an existing big.matrix object.  
+#' WARNING!!! This modifies the original big.matrix object and therefore must be
+#' either recreated or subset to regain the original structure.  Use only if you 
+#' intend to only use the original matrix in the new form.
+#' @param x A \code{"big.matrix"} 
+#' @param y Columns to append, accepts \code{"big.matrix"} and \code{"matrix"} in addition to 
+#' \code{"numeric"} and \code{"integer"} (e.g. "2.5", "1L")
+#' @param cols.y Optionally specify columns to bind from 'y' if 'y' is a \code{"matrix"} or 
+#' \code{"big.matrix"}.
+#' @return The original \code{"big.matrix"} with the added columns
+#' @example Examples/cbindBMIP.R
+#' @export
+cbindBMIP <- function(x, y, cols.y=NULL)
+{
+  if(class(x) != "big.matrix"){
+    stop("x is not a 'big.matrix'")
+  }
+  
+  if(is.big.matrix(y) | is.matrix(y)){
+    if(nrow(x) != nrow(y)){
+      stop("Error: Number of rows between x and y are not equal.")
+    }
+  }
+  
+  # set number of columns to add
+  if(class(y) == "numeric" | class(y) == "integer"){
+    newCols <- 1
+  }else{
+    if(!is.null(cols.y)){
+      cols2 <- cleanupcols(cols.y, ncol(y), colnames(y))  
+      newCols <- length(cols2)
+    }else{
+      newCols <- ncol(y)
+      cols2 <- seq(newCols)
+    }
+  }
+ 
+  # Add the needed number of columns
+  resizeBM(x, 0, newCols)
+  
+  # Fill in added columns
+  switch(class(y),
+         integer = x[,ncol(x)] <- y,
+         numeric = x[,ncol(x)] <- y,
+         matrix = x[,(ncol(x)-newCols+1):ncol(x)] <- y[,c(cols2)],
+         big.matrix = x[,(ncol(x)-newCols+1):ncol(x)] <- y[,c(cols2)],
+         )
+  
+  # matrix modification message returned by 'resizeBM' so NULL return
+}
 
 
+#' @title Provide power (i.e. '^') for class "big.matrix"
+#' @description This is used to take each element of a \code{"big.matrix"} to a specified power, with the 
+#' option to have the new copy filebacked.
+#' @param x A \code{"big.matrix"}
+#' @param value A \code{"numeric"} value to take each element to the power
+#' @param cols.x Possible subset of columns from the x object; could be numeric, named, or logical
+#' @param z Optional destinitation object (matrix or big.matrix); if not specified, a big.matrix will be created
+#' @param type preferably specified (e.g. "integer", "double", etc.)
+#' @param separated use separated column organization of the data instead of column-major organization; 
+#' use with caution if the number of columns is large.
+#' @param backingfile the root name for the file(s) for the cache of x.
+#' @param backingpath the path to the directory containing the file backing cache
+#' @param descriptorfile the name of the file to hold the backingfile description, for subsequent use with 
+#' \code{\link[bigmemory]{attach.big.matrix}}; if NULL, the backingfile is used as the root part of the descriptor file name. 
+#' The descriptor file is placed in the same directory as the backing files.
+#' @param binarydescriptor the flag to specify if the binary RDS format should be used for the backingfile description, 
+#' for subsequent use with \code{\link[bigmemory]{attach.big.matrix}}; if NULL of FALSE, the dput() file format is used.
+#' @param shared TRUE by default, and always TRUE if the big.matrix is file-backed. For a non-filebacked big.matrix, 
+#' shared=FALSE uses non-shared memory, which can be more stable for large (say, >50% of RAM) objects. Shared memory 
+#' allocation can sometimes fail in such cases due to exhausted shared-memory resources in the system.
+#' @details This generates a new \code{"big.matrix"} object whereby each element has been taken to the power
+#' of \code{"value"}.  This function should only need to be used if the new matrix must be filebacked as the 
+#' NULL call is applied in the \code{"^"} method.
+#' @return a \code{"big.matrix"}
+#' @export
+powBM <- function(x, value,
+                  cols.x=NULL,
+                  z=NULL, type=NULL, separated=NULL,
+                  backingfile=NULL, backingpath=NULL,
+                  descriptorfile=NULL, binarydescriptor=FALSE,
+                  shared=TRUE)
+{
+  
+  if (nrow(x) > 2^31-1){
+    stop(paste("Too many rows to copy at this point in time;",
+               "this may be fixed in the future."))
+  }
+  if (is.null(type)) type <- typeof(x)
+  if (is.big.matrix(x)) {
+    if (is.null(separated)) separated <- is.separated(x)
+  } else {
+    separated <- FALSE
+  }
+  
+  if(!is.null(cols.x)){
+    cols1 <- cleanupcols(cols.x, ncol(x), colnames(x))
+    y <- deepcopy(x, cols1)
+  }else{
+    cols1 <- seq(ncol(x))
+    y <- x
+  }
+  
+  if (is.null(z)) {
+    z <- big.matrix(nrow=nrow(y), ncol=length(cols1), type=type, init=NULL,
+                    dimnames=dimnames(y), separated=separated,
+                    backingfile=backingfile, backingpath=backingpath,
+                    descriptorfile=descriptorfile,
+                    binarydescriptor=binarydescriptor, shared)
+  }
+
+  .Call("CpowBM", y@address, z@address, as.double(seq(nrow(y))), as.double(cols1), getOption("bigmemory.typecast.warning"),
+        as.integer(value))  
+  
+  return(z)
+}
+
+
+#' @title Provide power (i.e. '^') for class "big.matrix"
+#' @description This is used to take each element of a \code{"big.matrix"} to a specified power, with the 
+#' option to have the new copy filebacked.
+#' @param x A \code{"big.matrix"}
+#' @param value A \code{"numeric"} value to take each element to the power
+#' @details This generates a new \code{"big.matrix"} object whereby each element has been taken to the power
+#' of \code{"value"}.  This function should only need to be used if the new matrix must be filebacked as the 
+#' NULL call is applied in the \code{"^"} method.
+#' @return a \code{"big.matrix"}
+#' @export
+powBMIP <- function(x, value)
+{
+  if(!is.big.matrix(x)){
+    stop("Error: x is not of type 'big.matrix'")
+  }
+  if(!is.numeric(value) & !is.integer(value)){
+    stop("Erorr: value must be of type 'integer' or 'numeric'")
+  }
+  if (nrow(x) > 2^31-1){
+    stop(paste("Too many rows to copy at this point in time;",
+               "this may be fixed in the future."))
+  }
+  
+  .Call("CpowBMIP", x@address, as.integer(value), getOption("bigmemory.typecast.warning"))  
+  ret <- paste(c(paste("big.matrix", x@address, "was modified"), collapse=" "))
+  return(ret)
+}
 
