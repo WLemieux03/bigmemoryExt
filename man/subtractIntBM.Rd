@@ -25,13 +25,18 @@ use with caution if the number of columns is large.}
 
 \item{backingfile}{the root name for the file(s) for the cache of x.}
 
-\item{backingpath}{}
+\item{backingpath}{the path to the directory containing the file backing cache}
 
-\item{descriptorfile}{}
+\item{descriptorfile}{the name of the file to hold the backingfile description, for subsequent use with
+\code{\link[bigmemory]{attach.big.matrix}}; if NULL, the backingfile is used as the root part of the descriptor file name.
+The descriptor file is placed in the same directory as the backing files.}
 
-\item{binarydescriptor}{}
+\item{binarydescriptor}{the flag to specify if the binary RDS format should be used for the backingfile description,
+for subsequent use with \code{\link[bigmemory]{attach.big.matrix}}; if NULL of FALSE, the dput() file format is used.}
 
-\item{shared}{}
+\item{shared}{TRUE by default, and always TRUE if the big.matrix is file-backed. For a non-filebacked big.matrix,
+shared=FALSE uses non-shared memory, which can be more stable for large (say, >50% of RAM) objects. Shared memory
+allocation can sometimes fail in such cases due to exhausted shared-memory resources in the system.}
 }
 \value{
 a \code{"big.matrix"}
