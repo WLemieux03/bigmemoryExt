@@ -412,13 +412,13 @@ powBM <- function(x, value,
 }
 
 
-#' @title Provide power (i.e. '^') for class "big.matrix"
-#' @description This is used to take each element of a \code{"big.matrix"} to a specified power, with the 
-#' option to have the new copy filebacked.
+#' @title Provide in-place power (i.e. '^') for class "big.matrix"
+#' @description This is used to take each element of a \code{"big.matrix"} to a specified power.
+#' WARNING!!! This replaces the original matrix.
 #' @param x A \code{"big.matrix"}
 #' @param value A \code{"numeric"} value to take each element to the power
-#' @details This generates a new \code{"big.matrix"} object whereby each element has been taken to the power
-#' of \code{"value"}.  This function should only need to be used if the new matrix must be filebacked as the 
+#' @details This function takes each element of a \code{"big.matrix"} to the specified power.  
+#' This function should only need to be used if the new matrix must be filebacked as the 
 #' NULL call is applied in the \code{"^"} method.
 #' @return a \code{"big.matrix"}
 #' @export
@@ -440,3 +440,190 @@ powBMIP <- function(x, value)
   return(ret)
 }
 
+
+#' @title Provide exponential function for class "big.matrix"
+#' @description This is used to take each element of a \code{"big.matrix"} and return the exponential with the 
+#' option to have the new copy filebacked.
+#' @param x A \code{"big.matrix"}
+#' @param cols.x Possible subset of columns from the x object; could be numeric, named, or logical
+#' @param z Optional destinitation object (matrix or big.matrix); if not specified, a big.matrix will be created
+#' @param type default: "double"
+#' @param separated use separated column organization of the data instead of column-major organization; 
+#' use with caution if the number of columns is large.
+#' @param backingfile the root name for the file(s) for the cache of x.
+#' @param backingpath the path to the directory containing the file backing cache
+#' @param descriptorfile the name of the file to hold the backingfile description, for subsequent use with 
+#' \code{\link[bigmemory]{attach.big.matrix}}; if NULL, the backingfile is used as the root part of the descriptor file name. 
+#' The descriptor file is placed in the same directory as the backing files.
+#' @param binarydescriptor the flag to specify if the binary RDS format should be used for the backingfile description, 
+#' for subsequent use with \code{\link[bigmemory]{attach.big.matrix}}; if NULL of FALSE, the dput() file format is used.
+#' @param shared TRUE by default, and always TRUE if the big.matrix is file-backed. For a non-filebacked big.matrix, 
+#' shared=FALSE uses non-shared memory, which can be more stable for large (say, >50% of RAM) objects. Shared memory 
+#' allocation can sometimes fail in such cases due to exhausted shared-memory resources in the system.
+#' @details This generates a new \code{"big.matrix"} object whereby each element has been replaced with its' exponent
+#' of \code{"value"}.  This function should only need to be used if the new matrix must be filebacked as the 
+#' NULL call is applied in the \code{\link[base]{exp}} method.
+#' @return a \code{"big.matrix"}
+#' @export
+expBM <- function(x,
+                  cols.x=NULL,
+                  z=NULL, type="double", separated=NULL,
+                  backingfile=NULL, backingpath=NULL,
+                  descriptorfile=NULL, binarydescriptor=FALSE,
+                  shared=TRUE)
+{
+  
+  if (nrow(x) > 2^31-1){
+    stop(paste("Too many rows to copy at this point in time;",
+               "this may be fixed in the future."))
+  }
+  if (is.null(type)) type <- typeof(x)
+  if (is.big.matrix(x)) {
+    if (is.null(separated)) separated <- is.separated(x)
+  } else {
+    separated <- FALSE
+  }
+  
+  if(!is.null(cols.x)){
+    cols1 <- cleanupcols(cols.x, ncol(x), colnames(x))
+    y <- deepcopy(x, cols1)
+  }else{
+    cols1 <- seq(ncol(x))
+    y <- x
+  }
+  
+  if (is.null(z)) {
+    z <- big.matrix(nrow=nrow(y), ncol=length(cols1), type=type, init=NULL,
+                    dimnames=dimnames(y), separated=separated,
+                    backingfile=backingfile, backingpath=backingpath,
+                    descriptorfile=descriptorfile,
+                    binarydescriptor=binarydescriptor, shared)
+  }
+  
+  .Call("CexpBM", y@address, z@address, as.double(seq(nrow(y))), as.double(cols1), getOption("bigmemory.typecast.warning"))  
+  
+  return(z)
+}
+
+
+#' @title Provide in-place exponential function for class "big.matrix"
+#' @description This is used to take each element of a \code{"big.matrix"} to a specified power.
+#' WARNING!!! This replaces the original matrix.
+#' @param x A \code{"big.matrix"} which must be of type "double" to allow decimals
+#' @details This function takes each element of a \code{"big.matrix"} to the specified power.  
+#' This function should only need to be used if the new matrix must be filebacked as the 
+#' NULL call is applied in the \code{\link[base]{exp}} method.
+#' @return a \code{"big.matrix"}
+#' @export
+expBMIP <- function(x)
+{
+  if(!is.big.matrix(x)){
+    stop("Error: x is not of class 'big.matrix'")
+  }
+  
+  if(typeof(x) != "double"){
+    stop("Error: x must be of type 'double'")
+  }
+
+  if (nrow(x) > 2^31-1){
+    stop(paste("Too many rows to copy at this point in time;",
+               "this may be fixed in the future."))
+  }
+  
+  .Call("CexpBMIP", x@address, getOption("bigmemory.typecast.warning"))  
+  ret <- paste(c("big.matrix", x@address, "was modified"), collapse=" ")
+  return(ret)
+}
+
+#' @title Provide natural logarithm function for class "big.matrix"
+#' @description This is used to take each element of a \code{"big.matrix"} and return the natural log with the 
+#' option to have the new copy filebacked.
+#' @param x A \code{"big.matrix"}
+#' @param cols.x Possible subset of columns from the x object; could be numeric, named, or logical
+#' @param z Optional destinitation object (matrix or big.matrix); if not specified, a big.matrix will be created
+#' @param type default: "double"
+#' @param separated use separated column organization of the data instead of column-major organization; 
+#' use with caution if the number of columns is large.
+#' @param backingfile the root name for the file(s) for the cache of x.
+#' @param backingpath the path to the directory containing the file backing cache
+#' @param descriptorfile the name of the file to hold the backingfile description, for subsequent use with 
+#' \code{\link[bigmemory]{attach.big.matrix}}; if NULL, the backingfile is used as the root part of the descriptor file name. 
+#' The descriptor file is placed in the same directory as the backing files.
+#' @param binarydescriptor the flag to specify if the binary RDS format should be used for the backingfile description, 
+#' for subsequent use with \code{\link[bigmemory]{attach.big.matrix}}; if NULL of FALSE, the dput() file format is used.
+#' @param shared TRUE by default, and always TRUE if the big.matrix is file-backed. For a non-filebacked big.matrix, 
+#' shared=FALSE uses non-shared memory, which can be more stable for large (say, >50% of RAM) objects. Shared memory 
+#' allocation can sometimes fail in such cases due to exhausted shared-memory resources in the system.
+#' @details This generates a new \code{"big.matrix"} object whereby each element has been replaced with its' natural log
+#' of \code{"value"}.  This function should only need to be used if the new matrix must be filebacked as the 
+#' NULL call is applied in the \code{\link[base]{log}} method.
+#' @return a \code{"big.matrix"}
+#' @export
+logBM <- function(x,
+                  cols.x=NULL,
+                  z=NULL, type="double", separated=NULL,
+                  backingfile=NULL, backingpath=NULL,
+                  descriptorfile=NULL, binarydescriptor=FALSE,
+                  shared=TRUE)
+{
+  
+  if (nrow(x) > 2^31-1){
+    stop(paste("Too many rows to copy at this point in time;",
+               "this may be fixed in the future."))
+  }
+  if (is.null(type)) type <- typeof(x)
+  if (is.big.matrix(x)) {
+    if (is.null(separated)) separated <- is.separated(x)
+  } else {
+    separated <- FALSE
+  }
+  
+  if(!is.null(cols.x)){
+    cols1 <- cleanupcols(cols.x, ncol(x), colnames(x))
+    y <- deepcopy(x, cols1)
+  }else{
+    cols1 <- seq(ncol(x))
+    y <- x
+  }
+  
+  if (is.null(z)) {
+    z <- big.matrix(nrow=nrow(y), ncol=length(cols1), type=type, init=NULL,
+                    dimnames=dimnames(y), separated=separated,
+                    backingfile=backingfile, backingpath=backingpath,
+                    descriptorfile=descriptorfile,
+                    binarydescriptor=binarydescriptor, shared)
+  }
+  
+  .Call("ClogBM", y@address, z@address, as.double(seq(nrow(y))), as.double(cols1), getOption("bigmemory.typecast.warning"))  
+  
+  return(z)
+}
+
+#' @title Provide in-place natural log function for class "big.matrix"
+#' @description This is used to take each element of a \code{"big.matrix"} to a specified power.
+#' WARNING!!! This replaces the original matrix.
+#' @param x A \code{"big.matrix"} which must be of type "double" to allow decimals
+#' @details This function takes each element of a \code{"big.matrix"} to the specified power.  
+#' This function should only need to be used if the new matrix must be filebacked as the 
+#' NULL call is applied in the \code{\link[base]{log}} method.
+#' @return a \code{"big.matrix"}
+#' @export
+logBMIP <- function(x)
+{
+  if(!is.big.matrix(x)){
+    stop("Error: x is not of class 'big.matrix'")
+  }
+  
+  if(typeof(x) != "double"){
+    stop("Error: x must be of type 'double'")
+  }
+  
+  if (nrow(x) > 2^31-1){
+    stop(paste("Too many rows to copy at this point in time;",
+               "this may be fixed in the future."))
+  }
+  
+  .Call("ClogBMIP", x@address, getOption("bigmemory.typecast.warning"))  
+  ret <- paste(c("big.matrix", x@address, "was modified"), collapse=" ")
+  return(ret)
+}
