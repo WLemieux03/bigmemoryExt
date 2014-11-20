@@ -44,9 +44,9 @@ void transposeBM(BigMatrix *pInMat, BigMatrix *pOutMat, SEXP rowInds, SEXP colIn
   index_type nCols = GET_LENGTH(colInds);
   
   if (nRows != pOutMat->ncol())
-    Rf_error("length of row indices does not equal # of rows in new matrix");
+    Rf_error("length of row indices does not equal # of cols in new matrix");
   if (nCols != pOutMat->nrow())
-    Rf_error("length of col indices does not equal # of cols in new matrix");
+    Rf_error("length of col indices does not equal # of rows in new matrix");
   
   index_type i = 0;
   index_type j = 0;
