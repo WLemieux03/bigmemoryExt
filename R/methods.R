@@ -10,10 +10,24 @@ setMethod("Arith", c(e1="big.matrix", e2="numeric"),
             op = .Generic[[1]]
             switch(op,
                    `^` = powBM(e1, e2),
+                   `*` = multiplyIntBM(e1, e2, type="double"),
                     stop("Undefined operation")
                    )
           }
           )
+
+#' @export
+setMethod("Arith", c(e1="numeric", e2="big.matrix"),
+          function(e1,e2)
+          {
+            op = .Generic[[1]]
+            switch(op,
+                   `/` = divideIntBM(e2, e1, type="double"),
+                   `*` = multiplyIntBM(e2, e1, type="double"),
+                   stop("Undefined operation")
+            )
+          }
+)
 
 #' @export
 setMethod("Math", c(x="big.matrix"),
