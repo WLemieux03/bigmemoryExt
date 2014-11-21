@@ -369,6 +369,7 @@ cbindBMIP <- function(x, y, cols.y=NULL)
 #' of \code{"value"}.  This function should only need to be used if the new matrix must be filebacked as the 
 #' NULL call is applied in the \code{"^"} method.
 #' @return a \code{"big.matrix"}
+#' @seealso \code{\link[bigmemoryExt]{powBMIP}} for in-place power
 #' @export
 powBM <- function(x, value,
                   cols.x=NULL,
@@ -418,9 +419,8 @@ powBM <- function(x, value,
 #' @param x A \code{"big.matrix"}
 #' @param value A \code{"numeric"} value to take each element to the power
 #' @details This function takes each element of a \code{"big.matrix"} to the specified power.  
-#' This function should only need to be used if the new matrix must be filebacked as the 
-#' NULL call is applied in the \code{"^"} method.
 #' @return a \code{"big.matrix"}
+#' @seealso \code{\link[base]{^}} for new big.matrix object \code{\link[bigmemoryExt]{powBM}} for more flexible new big.matrix
 #' @export
 powBMIP <- function(x, value)
 {
@@ -460,8 +460,8 @@ powBMIP <- function(x, value)
 #' @param shared TRUE by default, and always TRUE if the big.matrix is file-backed. For a non-filebacked big.matrix, 
 #' shared=FALSE uses non-shared memory, which can be more stable for large (say, >50% of RAM) objects. Shared memory 
 #' allocation can sometimes fail in such cases due to exhausted shared-memory resources in the system.
-#' @details This generates a new \code{"big.matrix"} object whereby each element has been replaced with its' exponent
-#' of \code{"value"}.  This function should only need to be used if the new matrix must be filebacked as the 
+#' @details This generates a new \code{"big.matrix"} object whereby each element has been replaced with its' exponent.  
+#' This function should only need to be used if the new matrix must be filebacked as the 
 #' NULL call is applied in the \code{\link[base]{exp}} method.
 #' @return a \code{"big.matrix"}
 #' @export
@@ -510,9 +510,7 @@ expBM <- function(x,
 #' @description This is used to take each element of a \code{"big.matrix"} to a specified power.
 #' WARNING!!! This replaces the original matrix.
 #' @param x A \code{"big.matrix"} which must be of type "double" to allow decimals
-#' @details This function takes each element of a \code{"big.matrix"} to the specified power.  
-#' This function should only need to be used if the new matrix must be filebacked as the 
-#' NULL call is applied in the \code{\link[base]{exp}} method.
+#' @details This function takes each element of a \code{"big.matrix"} to its' respective exponential.  
 #' @return a \code{"big.matrix"}
 #' @export
 expBMIP <- function(x)
@@ -535,7 +533,7 @@ expBMIP <- function(x)
   return(ret)
 }
 
-#' @title Provide natural logarithm function for class "big.matrix"
+#' @title Provide common logarithm function for class "big.matrix"
 #' @description This is used to take each element of a \code{"big.matrix"} and return the natural log with the 
 #' option to have the new copy filebacked.
 #' @param x A \code{"big.matrix"}
@@ -554,12 +552,14 @@ expBMIP <- function(x)
 #' @param shared TRUE by default, and always TRUE if the big.matrix is file-backed. For a non-filebacked big.matrix, 
 #' shared=FALSE uses non-shared memory, which can be more stable for large (say, >50% of RAM) objects. Shared memory 
 #' allocation can sometimes fail in such cases due to exhausted shared-memory resources in the system.
-#' @details This generates a new \code{"big.matrix"} object whereby each element has been replaced with its' natural log
-#' of \code{"value"}.  This function should only need to be used if the new matrix must be filebacked as the 
-#' NULL call is applied in the \code{\link[base]{log}} method.
+#' @details This generates a new \code{"big.matrix"} object whereby each element has been replaced with its' common log.  
+#' This function should only need to be used if the new matrix must be filebacked as the NULL call is applied in the 
+#' \code{\link[base]{log10}} method.  For other bases, use the \code{\link[bigmemoryExt]{logBaseBM}} function.
 #' @return a \code{"big.matrix"}
+#' @seealso \code{\link[base]{log10}} for generic call, \code{\link[bigmemoryExt]{logBaseBM}} for more control of new matrix,
+#' and \code{\link[bigmemoryExt]{logBMIP}} for in-place log transforms
 #' @export
-logBM <- function(x,
+log10BM <- function(x,
                   cols.x=NULL,
                   z=NULL, type="double", separated=NULL,
                   backingfile=NULL, backingpath=NULL,
@@ -594,7 +594,74 @@ logBM <- function(x,
                     binarydescriptor=binarydescriptor, shared)
   }
   
-  .Call("ClogBM", y@address, z@address, as.double(seq(nrow(y))), as.double(cols1), getOption("bigmemory.typecast.warning"))  
+  .Call("Clog10BM", y@address, z@address, getOption("bigmemory.typecast.warning"))  
+  
+  return(z)
+}
+
+#' @title Provide base logarithm function for class "big.matrix"
+#' @description This is used to take each element of a \code{"big.matrix"} and return the natural log with the 
+#' option to have the new copy filebacked.
+#' @param x A \code{"big.matrix"}
+#' @param base The base for the log calculation.  Default: \code{"exp(1)"}
+#' @param cols.x Possible subset of columns from the x object; could be numeric, named, or logical
+#' @param z Optional destinitation object (matrix or big.matrix); if not specified, a big.matrix will be created
+#' @param type default: "double"
+#' @param separated use separated column organization of the data instead of column-major organization; 
+#' use with caution if the number of columns is large.
+#' @param backingfile the root name for the file(s) for the cache of x.
+#' @param backingpath the path to the directory containing the file backing cache
+#' @param descriptorfile the name of the file to hold the backingfile description, for subsequent use with 
+#' \code{\link[bigmemory]{attach.big.matrix}}; if NULL, the backingfile is used as the root part of the descriptor file name. 
+#' The descriptor file is placed in the same directory as the backing files.
+#' @param binarydescriptor the flag to specify if the binary RDS format should be used for the backingfile description, 
+#' for subsequent use with \code{\link[bigmemory]{attach.big.matrix}}; if NULL of FALSE, the dput() file format is used.
+#' @param shared TRUE by default, and always TRUE if the big.matrix is file-backed. For a non-filebacked big.matrix, 
+#' shared=FALSE uses non-shared memory, which can be more stable for large (say, >50% of RAM) objects. Shared memory 
+#' allocation can sometimes fail in such cases due to exhausted shared-memory resources in the system.
+#' @details This generates a new \code{"big.matrix"} object whereby each element has been replaced with its' natural log
+#' of \code{"value"}.  This function should only need to be used if the new matrix must be filebacked as the 
+#' NULL call is applied in the \code{\link[base]{log}} method.
+#' @return a \code{"big.matrix"}
+#' @seealso \code{\link[base]{log10}} for generic common log10 call, \code{\link[bigmemoryExt]{log10BM}} for more control 
+#' of new matrix, and \code{\link[bigmemoryExt]{logBMIP}} for in-place log transforms
+#' @export
+logBaseBM <- function(x, base,
+                  cols.x=NULL,
+                  z=NULL, type="double", separated=NULL,
+                  backingfile=NULL, backingpath=NULL,
+                  descriptorfile=NULL, binarydescriptor=FALSE,
+                  shared=TRUE)
+{
+  
+  if (nrow(x) > 2^31-1){
+    stop(paste("Too many rows to copy at this point in time;",
+               "this may be fixed in the future."))
+  }
+  if (is.null(type)) type <- typeof(x)
+  if (is.big.matrix(x)) {
+    if (is.null(separated)) separated <- is.separated(x)
+  } else {
+    separated <- FALSE
+  }
+  
+  if(!is.null(cols.x)){
+    cols1 <- cleanupcols(cols.x, ncol(x), colnames(x))
+    y <- deepcopy(x, cols1)
+  }else{
+    cols1 <- seq(ncol(x))
+    y <- x
+  }
+  
+  if (is.null(z)) {
+    z <- big.matrix(nrow=nrow(y), ncol=length(cols1), type=type, init=NULL,
+                    dimnames=dimnames(y), separated=separated,
+                    backingfile=backingfile, backingpath=backingpath,
+                    descriptorfile=descriptorfile,
+                    binarydescriptor=binarydescriptor, shared)
+  }
+
+  .Call("ClogBaseBM", y@address, z@address, base, getOption("bigmemory.typecast.warning"))  
   
   return(z)
 }
@@ -603,12 +670,13 @@ logBM <- function(x,
 #' @description This is used to take each element of a \code{"big.matrix"} to a specified power.
 #' WARNING!!! This replaces the original matrix.
 #' @param x A \code{"big.matrix"} which must be of type "double" to allow decimals
-#' @details This function takes each element of a \code{"big.matrix"} to the specified power.  
-#' This function should only need to be used if the new matrix must be filebacked as the 
-#' NULL call is applied in the \code{\link[base]{log}} method.
+#' @param base The base for the logarithm. Default = \code{"exp(1)"}
+#' @details This function takes each element of a \code{"big.matrix"} to replaes with its' respective base logarithm.  
 #' @return a \code{"big.matrix"}
+#' @seealso \code{\link[base]{log10}} for generic common log10 call, \code{\link[bigmemoryExt]{log10BM}} for more control 
+#' of new matrix, and \code{\link[bigmemoryExt]{logBaseBM}} for different logartihm bases.
 #' @export
-logBMIP <- function(x)
+logBMIP <- function(x, base=exp(1))
 {
   if(!is.big.matrix(x)){
     stop("Error: x is not of class 'big.matrix'")
@@ -623,7 +691,289 @@ logBMIP <- function(x)
                "this may be fixed in the future."))
   }
   
-  .Call("ClogBMIP", x@address, getOption("bigmemory.typecast.warning"))  
+  .Call("ClogBMIP", x@address, base, getOption("bigmemory.typecast.warning"))  
+  ret <- paste(c("big.matrix", x@address, "was modified"), collapse=" ")
+  return(ret)
+}
+
+
+#' @title Provide hyperbolic tangent function for class "big.matrix"
+#' @description This is used to take each element of a \code{"big.matrix"} and return the hyperbolic tangent with the 
+#' option to have the new copy filebacked.
+#' @param x A \code{"big.matrix"}
+#' @param cols.x Possible subset of columns from the x object; could be numeric, named, or logical
+#' @param z Optional destinitation object (matrix or big.matrix); if not specified, a big.matrix will be created
+#' @param type default: "double"
+#' @param separated use separated column organization of the data instead of column-major organization; 
+#' use with caution if the number of columns is large.
+#' @param backingfile the root name for the file(s) for the cache of x.
+#' @param backingpath the path to the directory containing the file backing cache
+#' @param descriptorfile the name of the file to hold the backingfile description, for subsequent use with 
+#' \code{\link[bigmemory]{attach.big.matrix}}; if NULL, the backingfile is used as the root part of the descriptor file name. 
+#' The descriptor file is placed in the same directory as the backing files.
+#' @param binarydescriptor the flag to specify if the binary RDS format should be used for the backingfile description, 
+#' for subsequent use with \code{\link[bigmemory]{attach.big.matrix}}; if NULL of FALSE, the dput() file format is used.
+#' @param shared TRUE by default, and always TRUE if the big.matrix is file-backed. For a non-filebacked big.matrix, 
+#' shared=FALSE uses non-shared memory, which can be more stable for large (say, >50% of RAM) objects. Shared memory 
+#' allocation can sometimes fail in such cases due to exhausted shared-memory resources in the system.
+#' @details This generates a new \code{"big.matrix"} object whereby each element has been replaced with its' hyperbolic
+#' tangent.  This function should only need to be used if the new matrix must be filebacked as the 
+#' NULL call is applied in the \code{\link[base]{tanh}} method.
+#' @return a \code{"big.matrix"}
+#' @export
+tanhBM <- function(x,
+                  cols.x=NULL,
+                  z=NULL, type="double", separated=NULL,
+                  backingfile=NULL, backingpath=NULL,
+                  descriptorfile=NULL, binarydescriptor=FALSE,
+                  shared=TRUE)
+{
+  
+  if (nrow(x) > 2^31-1){
+    stop(paste("Too many rows to copy at this point in time;",
+               "this may be fixed in the future."))
+  }
+  if (is.null(type)) type <- typeof(x)
+  if (is.big.matrix(x)) {
+    if (is.null(separated)) separated <- is.separated(x)
+  } else {
+    separated <- FALSE
+  }
+  
+  if(!is.null(cols.x)){
+    cols1 <- cleanupcols(cols.x, ncol(x), colnames(x))
+    y <- deepcopy(x, cols1)
+  }else{
+    cols1 <- seq(ncol(x))
+    y <- x
+  }
+  
+  if (is.null(z)) {
+    z <- big.matrix(nrow=nrow(y), ncol=length(cols1), type=type, init=NULL,
+                    dimnames=dimnames(y), separated=separated,
+                    backingfile=backingfile, backingpath=backingpath,
+                    descriptorfile=descriptorfile,
+                    binarydescriptor=binarydescriptor, shared)
+  }
+  
+  .Call("CtanhBM", y@address, z@address, as.double(seq(nrow(y))), as.double(cols1), getOption("bigmemory.typecast.warning"))  
+  
+  return(z)
+}
+
+
+#' @title Provide in-place hyperbolic tangent function for class "big.matrix"
+#' @description This is used to take each element of a \code{"big.matrix"} to its' hyperbolic tangent.
+#' WARNING!!! This replaces the original matrix.
+#' @param x A \code{"big.matrix"} which must be of type "double" to allow decimals
+#' @details This function takes each element of a \code{"big.matrix"} to its' hyperbolic tangent.  
+#' @return a \code{"big.matrix"}
+#' @seealso \code{\link[bigmemoryExt]{tanhBM}} for separate big.matrix
+#' @export
+tanhBMIP <- function(x)
+{
+  if(!is.big.matrix(x)){
+    stop("Error: x is not of class 'big.matrix'")
+  }
+  
+  if(typeof(x) != "double"){
+    stop("Error: x must be of type 'double'")
+  }
+  
+  if (nrow(x) > 2^31-1){
+    stop(paste("Too many rows to copy at this point in time;",
+               "this may be fixed in the future."))
+  }
+  
+  .Call("CtanhBMIP", x@address, getOption("bigmemory.typecast.warning"))  
+  ret <- paste(c("big.matrix", x@address, "was modified"), collapse=" ")
+  return(ret)
+}
+
+
+#' @title Provide hyperbolic cosine function for class "big.matrix"
+#' @description This is used to take each element of a \code{"big.matrix"} and return the hyperbolic cosine with the 
+#' option to have the new copy filebacked.
+#' @param x A \code{"big.matrix"}
+#' @param cols.x Possible subset of columns from the x object; could be numeric, named, or logical
+#' @param z Optional destinitation object (matrix or big.matrix); if not specified, a big.matrix will be created
+#' @param type default: "double"
+#' @param separated use separated column organization of the data instead of column-major organization; 
+#' use with caution if the number of columns is large.
+#' @param backingfile the root name for the file(s) for the cache of x.
+#' @param backingpath the path to the directory containing the file backing cache
+#' @param descriptorfile the name of the file to hold the backingfile description, for subsequent use with 
+#' \code{\link[bigmemory]{attach.big.matrix}}; if NULL, the backingfile is used as the root part of the descriptor file name. 
+#' The descriptor file is placed in the same directory as the backing files.
+#' @param binarydescriptor the flag to specify if the binary RDS format should be used for the backingfile description, 
+#' for subsequent use with \code{\link[bigmemory]{attach.big.matrix}}; if NULL of FALSE, the dput() file format is used.
+#' @param shared TRUE by default, and always TRUE if the big.matrix is file-backed. For a non-filebacked big.matrix, 
+#' shared=FALSE uses non-shared memory, which can be more stable for large (say, >50% of RAM) objects. Shared memory 
+#' allocation can sometimes fail in such cases due to exhausted shared-memory resources in the system.
+#' @details This generates a new \code{"big.matrix"} object whereby each element has been replaced with its' hyperbolic
+#' cosine.  This function should only need to be used if the new matrix must be filebacked as the 
+#' NULL call is applied in the \code{\link[base]{cosh}} method.
+#' @return a \code{"big.matrix"}
+#' @export
+coshBM <- function(x,
+                   cols.x=NULL,
+                   z=NULL, type="double", separated=NULL,
+                   backingfile=NULL, backingpath=NULL,
+                   descriptorfile=NULL, binarydescriptor=FALSE,
+                   shared=TRUE)
+{
+  
+  if (nrow(x) > 2^31-1){
+    stop(paste("Too many rows to copy at this point in time;",
+               "this may be fixed in the future."))
+  }
+  if (is.null(type)) type <- typeof(x)
+  if (is.big.matrix(x)) {
+    if (is.null(separated)) separated <- is.separated(x)
+  } else {
+    separated <- FALSE
+  }
+  
+  if(!is.null(cols.x)){
+    cols1 <- cleanupcols(cols.x, ncol(x), colnames(x))
+    y <- deepcopy(x, cols1)
+  }else{
+    cols1 <- seq(ncol(x))
+    y <- x
+  }
+  
+  if (is.null(z)) {
+    z <- big.matrix(nrow=nrow(y), ncol=length(cols1), type=type, init=NULL,
+                    dimnames=dimnames(y), separated=separated,
+                    backingfile=backingfile, backingpath=backingpath,
+                    descriptorfile=descriptorfile,
+                    binarydescriptor=binarydescriptor, shared)
+  }
+  
+  .Call("CcoshBM", y@address, z@address, as.double(seq(nrow(y))), as.double(cols1), getOption("bigmemory.typecast.warning"))  
+  
+  return(z)
+}
+
+
+#' @title Provide in-place hyperbolic cosine function for class "big.matrix"
+#' @description This is used to take each element of a \code{"big.matrix"} to its' hyperbolic cosine.
+#' WARNING!!! This replaces the original matrix.
+#' @param x A \code{"big.matrix"} which must be of type "double" to allow decimals
+#' @details This function takes each element of a \code{"big.matrix"} to its' hyperbolic cosine.  
+#' @return a \code{"big.matrix"}
+#' @seealso \code{\link[bigmemoryExt]{tanhBM}} for separate big.matrix
+#' @export
+coshBMIP <- function(x)
+{
+  if(!is.big.matrix(x)){
+    stop("Error: x is not of class 'big.matrix'")
+  }
+  
+  if(typeof(x) != "double"){
+    stop("Error: x must be of type 'double'")
+  }
+  
+  if (nrow(x) > 2^31-1){
+    stop(paste("Too many rows to copy at this point in time;",
+               "this may be fixed in the future."))
+  }
+  
+  .Call("CcoshBMIP", x@address, getOption("bigmemory.typecast.warning"))  
+  ret <- paste(c("big.matrix", x@address, "was modified"), collapse=" ")
+  return(ret)
+}
+
+
+#' @title Provide hyperbolic sine function for class "big.matrix"
+#' @description This is used to take each element of a \code{"big.matrix"} and return the hyperbolic sine with the 
+#' option to have the new copy filebacked.
+#' @param x A \code{"big.matrix"}
+#' @param cols.x Possible subset of columns from the x object; could be numeric, named, or logical
+#' @param z Optional destinitation object (matrix or big.matrix); if not specified, a big.matrix will be created
+#' @param type default: "double"
+#' @param separated use separated column organization of the data instead of column-major organization; 
+#' use with caution if the number of columns is large.
+#' @param backingfile the root name for the file(s) for the cache of x.
+#' @param backingpath the path to the directory containing the file backing cache
+#' @param descriptorfile the name of the file to hold the backingfile description, for subsequent use with 
+#' \code{\link[bigmemory]{attach.big.matrix}}; if NULL, the backingfile is used as the root part of the descriptor file name. 
+#' The descriptor file is placed in the same directory as the backing files.
+#' @param binarydescriptor the flag to specify if the binary RDS format should be used for the backingfile description, 
+#' for subsequent use with \code{\link[bigmemory]{attach.big.matrix}}; if NULL of FALSE, the dput() file format is used.
+#' @param shared TRUE by default, and always TRUE if the big.matrix is file-backed. For a non-filebacked big.matrix, 
+#' shared=FALSE uses non-shared memory, which can be more stable for large (say, >50% of RAM) objects. Shared memory 
+#' allocation can sometimes fail in such cases due to exhausted shared-memory resources in the system.
+#' @details This generates a new \code{"big.matrix"} object whereby each element has been replaced with its' hyperbolic
+#' sine.  This function should only need to be used if the new matrix must be filebacked as the 
+#' NULL call is applied in the \code{\link[base]{sinh}} method.
+#' @return a \code{"big.matrix"}
+#' @export
+sinhBM <- function(x,
+                   cols.x=NULL,
+                   z=NULL, type="double", separated=NULL,
+                   backingfile=NULL, backingpath=NULL,
+                   descriptorfile=NULL, binarydescriptor=FALSE,
+                   shared=TRUE)
+{
+  
+  if (nrow(x) > 2^31-1){
+    stop(paste("Too many rows to copy at this point in time;",
+               "this may be fixed in the future."))
+  }
+  if (is.null(type)) type <- typeof(x)
+  if (is.big.matrix(x)) {
+    if (is.null(separated)) separated <- is.separated(x)
+  } else {
+    separated <- FALSE
+  }
+  
+  if(!is.null(cols.x)){
+    cols1 <- cleanupcols(cols.x, ncol(x), colnames(x))
+    y <- deepcopy(x, cols1)
+  }else{
+    cols1 <- seq(ncol(x))
+    y <- x
+  }
+  
+  if (is.null(z)) {
+    z <- big.matrix(nrow=nrow(y), ncol=length(cols1), type=type, init=NULL,
+                    dimnames=dimnames(y), separated=separated,
+                    backingfile=backingfile, backingpath=backingpath,
+                    descriptorfile=descriptorfile,
+                    binarydescriptor=binarydescriptor, shared)
+  }
+  
+  .Call("CsinhBM", y@address, z@address, as.double(seq(nrow(y))), as.double(cols1), getOption("bigmemory.typecast.warning"))  
+  
+  return(z)
+}
+
+
+#' @title Provide in-place hyperbolic sine function for class "big.matrix"
+#' @description This is used to take each element of a \code{"big.matrix"} to its' hyperbolic sine.
+#' WARNING!!! This replaces the original matrix.
+#' @param x A \code{"big.matrix"} which must be of type "double" to allow decimals
+#' @details This function takes each element of a \code{"big.matrix"} to its' hyperbolic sine.  
+#' @return a \code{"big.matrix"}
+#' @seealso \code{\link[bigmemoryExt]{sinhBM}} for separate big.matrix
+#' @export
+sinhBMIP <- function(x)
+{
+  if(!is.big.matrix(x)){
+    stop("Error: x is not of class 'big.matrix'")
+  }
+  
+  if(typeof(x) != "double"){
+    stop("Error: x must be of type 'double'")
+  }
+  
+  if (nrow(x) > 2^31-1){
+    stop(paste("Too many rows to copy at this point in time;",
+               "this may be fixed in the future."))
+  }
+  
+  .Call("CcoshBMIP", x@address, getOption("bigmemory.typecast.warning"))  
   ret <- paste(c("big.matrix", x@address, "was modified"), collapse=" ")
   return(ret)
 }

@@ -80,14 +80,78 @@ void expBM(BigMatrix *pInMat, BigMatrix *pOutMat)
 
 template<typename in_CType, typename in_BMAccessorType,
   typename out_CType, typename out_BMAccessorType>
-void logBM(BigMatrix *pInMat, BigMatrix *pOutMat)
+void log10BM(BigMatrix *pInMat, BigMatrix *pOutMat)
 {
   in_BMAccessorType inMat( *pInMat );
   out_BMAccessorType outMat( *pOutMat );
   
   for(index_type i=0; i < pInMat->nrow(); i++) {
     for(index_type j=0; j < pInMat->ncol(); j++){
-      outMat[j][i] = log(inMat[j][i]);
+      outMat[j][i] = log10(inMat[j][i]);
+    }
+  }
+  
+  return;
+}
+
+template<typename in_CType, typename in_BMAccessorType,
+  typename out_CType, typename out_BMAccessorType>
+void logBaseBM(BigMatrix *pInMat, BigMatrix *pOutMat, double base)
+{
+  in_BMAccessorType inMat( *pInMat );
+  out_BMAccessorType outMat( *pOutMat );
+    
+  for(index_type i=0; i < pInMat->nrow(); i++) {
+    for(index_type j=0; j < pInMat->ncol(); j++){
+      outMat[j][i] = log10(inMat[j][i])/log10(base);
+    }
+  }
+  
+  return;
+}
+
+template<typename in_CType, typename in_BMAccessorType,
+  typename out_CType, typename out_BMAccessorType>
+void tanhBM(BigMatrix *pInMat, BigMatrix *pOutMat)
+{
+  in_BMAccessorType inMat( *pInMat );
+  out_BMAccessorType outMat( *pOutMat );
+  
+  for(index_type i=0; i < pInMat->nrow(); i++) {
+    for(index_type j=0; j < pInMat->ncol(); j++){
+      outMat[j][i] = tanh(inMat[j][i]);
+    }
+  }
+  
+  return;
+}
+
+template<typename in_CType, typename in_BMAccessorType,
+  typename out_CType, typename out_BMAccessorType>
+void coshBM(BigMatrix *pInMat, BigMatrix *pOutMat)
+{
+  in_BMAccessorType inMat( *pInMat );
+  out_BMAccessorType outMat( *pOutMat );
+  
+  for(index_type i=0; i < pInMat->nrow(); i++) {
+    for(index_type j=0; j < pInMat->ncol(); j++){
+      outMat[j][i] = cosh(inMat[j][i]);
+    }
+  }
+  
+  return;
+}
+
+template<typename in_CType, typename in_BMAccessorType,
+  typename out_CType, typename out_BMAccessorType>
+void sinhBM(BigMatrix *pInMat, BigMatrix *pOutMat)
+{
+  in_BMAccessorType inMat( *pInMat );
+  out_BMAccessorType outMat( *pOutMat );
+  
+  for(index_type i=0; i < pInMat->nrow(); i++) {
+    for(index_type j=0; j < pInMat->ncol(); j++){
+      outMat[j][i] = sinh(inMat[j][i]);
     }
   }
   
@@ -129,13 +193,55 @@ void expBMIP(BigMatrix *pInMat)
 }
 
 template<typename in_CType, typename in_BMAccessorType>
-void logBMIP(BigMatrix *pInMat)
+void logBMIP(BigMatrix *pInMat, double base)
 {
   in_BMAccessorType inMat( *pInMat );
   
   for(index_type i=0; i<pInMat->nrow(); i++ ){
     for(index_type j=0; j<pInMat->ncol(); j++){
-      inMat[j][i] = log(inMat[j][i]);
+      inMat[j][i] = log10(inMat[j][i])/log10(base);
+    }
+  }
+  
+  return;
+}
+
+template<typename in_CType, typename in_BMAccessorType>
+void tanhBMIP(BigMatrix *pInMat)
+{
+  in_BMAccessorType inMat( *pInMat );
+  
+  for(index_type i=0; i<pInMat->nrow(); i++ ){
+    for(index_type j=0; j<pInMat->ncol(); j++){
+      inMat[j][i] = tanh(inMat[j][i]);
+    }
+  }
+  
+  return;
+}
+
+template<typename in_CType, typename in_BMAccessorType>
+void coshBMIP(BigMatrix *pInMat)
+{
+  in_BMAccessorType inMat( *pInMat );
+  
+  for(index_type i=0; i<pInMat->nrow(); i++ ){
+    for(index_type j=0; j<pInMat->ncol(); j++){
+      inMat[j][i] = cosh(inMat[j][i]);
+    }
+  }
+  
+  return;
+}
+
+template<typename in_CType, typename in_BMAccessorType>
+void sinhBMIP(BigMatrix *pInMat)
+{
+  in_BMAccessorType inMat( *pInMat );
+  
+  for(index_type i=0; i<pInMat->nrow(); i++ ){
+    for(index_type j=0; j<pInMat->ncol(); j++){
+      inMat[j][i] = sinh(inMat[j][i]);
     }
   }
   
@@ -428,31 +534,31 @@ extern "C"
     return R_NilValue;
   }
   
-  #define CALL_logBM_2(IN_CTYPE, IN_ACCESSOR, OUT_ACCESSOR) \
+  #define CALL_log10BM_2(IN_CTYPE, IN_ACCESSOR, OUT_ACCESSOR) \
     switch(pOutMat->matrix_type()) \
     { \
       case 4: \
-        logBM<IN_CTYPE, IN_ACCESSOR<IN_CTYPE>, int, OUT_ACCESSOR<int> >( \
+        log10BM<IN_CTYPE, IN_ACCESSOR<IN_CTYPE>, int, OUT_ACCESSOR<int> >( \
           pInMat, pOutMat); \
         break; \
       case 8: \
-        logBM<IN_CTYPE, IN_ACCESSOR<IN_CTYPE>, double, OUT_ACCESSOR<double> >( \
+        log10BM<IN_CTYPE, IN_ACCESSOR<IN_CTYPE>, double, OUT_ACCESSOR<double> >( \
           pInMat, pOutMat); \
         break; \
     }
 
-  #define CALL_logBM_1(IN_ACCESSOR, OUT_ACCESSOR) \
+  #define CALL_log10BM_1(IN_ACCESSOR, OUT_ACCESSOR) \
     switch(pInMat->matrix_type()) \
     { \
       case 4: \
-        CALL_logBM_2(int, IN_ACCESSOR, OUT_ACCESSOR) \
+        CALL_log10BM_2(int, IN_ACCESSOR, OUT_ACCESSOR) \
         break; \
       case 8: \
-        CALL_logBM_2(double, IN_ACCESSOR, OUT_ACCESSOR) \
+        CALL_log10BM_2(double, IN_ACCESSOR, OUT_ACCESSOR) \
         break; \
     }
       
-  SEXP ClogBM(SEXP inAddr, SEXP outAddr, SEXP typecast_warning)
+  SEXP Clog10BM(SEXP inAddr, SEXP outAddr, SEXP typecast_warning)
   {
     BigMatrix *pInMat = reinterpret_cast<BigMatrix*>(
       R_ExternalPtrAddr(inAddr));
@@ -475,60 +581,447 @@ extern "C"
     
     // Not sure if there is a better way to do these function calls
     if (pInMat->separated_columns() && pOutMat->separated_columns()) {
-      CALL_logBM_1(SepMatrixAccessor, SepMatrixAccessor)
+      CALL_log10BM_1(SepMatrixAccessor, SepMatrixAccessor)
     }
     else if(pInMat->separated_columns() && !(pOutMat->separated_columns()))
     {
-      CALL_logBM_1(SepMatrixAccessor, MatrixAccessor)
+      CALL_log10BM_1(SepMatrixAccessor, MatrixAccessor)
     }
     else if(!(pInMat->separated_columns()) && pOutMat->separated_columns())
     {
-      CALL_logBM_1(MatrixAccessor, SepMatrixAccessor)
+      CALL_log10BM_1(MatrixAccessor, SepMatrixAccessor)
     }
     else
     {
-      CALL_logBM_1(MatrixAccessor, MatrixAccessor)
+      CALL_log10BM_1(MatrixAccessor, MatrixAccessor)
     }
 
     return R_NilValue;
   }
   
-  #define CALL_logBMIP_2(IN_CTYPE, IN_ACCESSOR) \
+  #define CALL_logBaseBM_2(IN_CTYPE, IN_ACCESSOR, OUT_ACCESSOR, base) \
+    switch(pOutMat->matrix_type()) \
+    { \
+      case 4: \
+        logBaseBM<IN_CTYPE, IN_ACCESSOR<IN_CTYPE>, int, OUT_ACCESSOR<int> >( \
+          pInMat, pOutMat, base); \
+        break; \
+      case 8: \
+        logBaseBM<IN_CTYPE, IN_ACCESSOR<IN_CTYPE>, double, OUT_ACCESSOR<double> >( \
+          pInMat, pOutMat, base); \
+        break; \
+    }
+
+  #define CALL_logBaseBM_1(IN_ACCESSOR, OUT_ACCESSOR, base) \
+    switch(pInMat->matrix_type()) \
+    { \
+      case 4: \
+        CALL_logBaseBM_2(int, IN_ACCESSOR, OUT_ACCESSOR, base) \
+        break; \
+      case 8: \
+        CALL_logBaseBM_2(double, IN_ACCESSOR, OUT_ACCESSOR, base) \
+        break; \
+    }
+      
+  SEXP ClogBaseBM(SEXP inAddr, SEXP outAddr, SEXP _base, SEXP typecast_warning)
+  {
+    BigMatrix *pInMat = reinterpret_cast<BigMatrix*>(
+      R_ExternalPtrAddr(inAddr));
+    BigMatrix *pOutMat = reinterpret_cast<BigMatrix*>(
+      R_ExternalPtrAddr(outAddr));
+    
+    if ((pOutMat->matrix_type() < pInMat->matrix_type()) & 
+      (LOGICAL_VALUE(typecast_warning) == (Rboolean)TRUE))
+    {
+      string type_names[9] = {
+        "", "char", "short", "", "integer", "", "", "", "double"};
+      
+      std::string warnMsg = string("Assignment will down cast from ") + 
+        type_names[pInMat->matrix_type()] + string(" to ") + 
+        type_names[pOutMat->matrix_type()] + string("\n") + 
+        string("Hint: To remove this warning type: ") + 
+        string("options(bigmemory.typecast.warning=FALSE)");
+      Rf_warning(warnMsg.c_str());
+    }
+    
+    double base = as<double>(_base);
+    
+    // Not sure if there is a better way to do these function calls
+    if (pInMat->separated_columns() && pOutMat->separated_columns()) {
+      CALL_logBaseBM_1(SepMatrixAccessor, SepMatrixAccessor, base)
+    }
+    else if(pInMat->separated_columns() && !(pOutMat->separated_columns()))
+    {
+      CALL_logBaseBM_1(SepMatrixAccessor, MatrixAccessor, base)
+    }
+    else if(!(pInMat->separated_columns()) && pOutMat->separated_columns())
+    {
+      CALL_logBaseBM_1(MatrixAccessor, SepMatrixAccessor, base)
+    }
+    else
+    {
+      CALL_logBaseBM_1(MatrixAccessor, MatrixAccessor, base)
+    }
+
+    return R_NilValue;
+  }
+  
+  #define CALL_logBMIP_2(IN_CTYPE, IN_ACCESSOR, base) \
     switch(pInMat->matrix_type()) \
     { \
       case 4: \
         logBMIP<IN_CTYPE, IN_ACCESSOR<IN_CTYPE> >( \
-          pInMat); \
+          pInMat, base); \
         break; \
       case 8: \
         logBMIP<IN_CTYPE, IN_ACCESSOR<IN_CTYPE> >( \
+          pInMat, base); \
+        break; \
+    }
+
+  #define CALL_logBMIP_1(IN_ACCESSOR, base) \
+    switch(pInMat->matrix_type()) \
+    { \
+      case 4: \
+        CALL_logBMIP_2(int, IN_ACCESSOR, base) \
+        break; \
+      case 8: \
+        CALL_logBMIP_2(double, IN_ACCESSOR, base) \
+        break; \
+    }
+      
+  SEXP ClogBMIP(SEXP inAddr, SEXP _base, SEXP typecast_warning)
+  {
+    BigMatrix *pInMat = reinterpret_cast<BigMatrix*>(
+      R_ExternalPtrAddr(inAddr));
+    
+    double base = as<double>(_base);
+    
+    // Not sure if there is a better way to do these function calls
+    if (pInMat->separated_columns() ) {
+      CALL_logBMIP_1(SepMatrixAccessor, base)
+    }
+    else
+    {
+      CALL_logBMIP_1(MatrixAccessor, base)
+    }
+
+    return R_NilValue;
+  }
+  
+  #define CALL_tanhBM_2(IN_CTYPE, IN_ACCESSOR, OUT_ACCESSOR) \
+    switch(pOutMat->matrix_type()) \
+    { \
+      case 4: \
+        tanhBM<IN_CTYPE, IN_ACCESSOR<IN_CTYPE>, int, OUT_ACCESSOR<int> >( \
+          pInMat, pOutMat); \
+        break; \
+      case 8: \
+        tanhBM<IN_CTYPE, IN_ACCESSOR<IN_CTYPE>, double, OUT_ACCESSOR<double> >( \
+          pInMat, pOutMat); \
+        break; \
+    }
+
+  #define CALL_tanhBM_1(IN_ACCESSOR, OUT_ACCESSOR) \
+    switch(pInMat->matrix_type()) \
+    { \
+      case 4: \
+        CALL_tanhBM_2(int, IN_ACCESSOR, OUT_ACCESSOR) \
+        break; \
+      case 8: \
+        CALL_tanhBM_2(double, IN_ACCESSOR, OUT_ACCESSOR) \
+        break; \
+    }
+      
+  SEXP CtanhBM(SEXP inAddr, SEXP outAddr, SEXP typecast_warning)
+  {
+    BigMatrix *pInMat = reinterpret_cast<BigMatrix*>(
+      R_ExternalPtrAddr(inAddr));
+    BigMatrix *pOutMat = reinterpret_cast<BigMatrix*>(
+      R_ExternalPtrAddr(outAddr));
+    
+    if ((pOutMat->matrix_type() < pInMat->matrix_type()) & 
+      (LOGICAL_VALUE(typecast_warning) == (Rboolean)TRUE))
+    {
+      string type_names[9] = {
+        "", "char", "short", "", "integer", "", "", "", "double"};
+      
+      std::string warnMsg = string("Assignment will down cast from ") + 
+        type_names[pInMat->matrix_type()] + string(" to ") + 
+        type_names[pOutMat->matrix_type()] + string("\n") + 
+        string("Hint: To remove this warning type: ") + 
+        string("options(bigmemory.typecast.warning=FALSE)");
+      Rf_warning(warnMsg.c_str());
+    }
+    
+    // Not sure if there is a better way to do these function calls
+    if (pInMat->separated_columns() && pOutMat->separated_columns()) {
+      CALL_tanhBM_1(SepMatrixAccessor, SepMatrixAccessor)
+    }
+    else if(pInMat->separated_columns() && !(pOutMat->separated_columns()))
+    {
+      CALL_tanhBM_1(SepMatrixAccessor, MatrixAccessor)
+    }
+    else if(!(pInMat->separated_columns()) && pOutMat->separated_columns())
+    {
+      CALL_tanhBM_1(MatrixAccessor, SepMatrixAccessor)
+    }
+    else
+    {
+      CALL_tanhBM_1(MatrixAccessor, MatrixAccessor)
+    }
+
+    return R_NilValue;
+  }
+  
+  #define CALL_tanhBMIP_2(IN_CTYPE, IN_ACCESSOR) \
+    switch(pInMat->matrix_type()) \
+    { \
+      case 4: \
+        tanhBMIP<IN_CTYPE, IN_ACCESSOR<IN_CTYPE> >( \
+          pInMat); \
+        break; \
+      case 8: \
+        tanhBMIP<IN_CTYPE, IN_ACCESSOR<IN_CTYPE> >( \
           pInMat); \
         break; \
     }
 
-  #define CALL_logBMIP_1(IN_ACCESSOR) \
+  #define CALL_tanhBMIP_1(IN_ACCESSOR) \
     switch(pInMat->matrix_type()) \
     { \
       case 4: \
-        CALL_logBMIP_2(int, IN_ACCESSOR) \
+        CALL_tanhBMIP_2(int, IN_ACCESSOR) \
         break; \
       case 8: \
-        CALL_logBMIP_2(double, IN_ACCESSOR) \
+        CALL_tanhBMIP_2(double, IN_ACCESSOR) \
         break; \
     }
       
-  SEXP ClogBMIP(SEXP inAddr, SEXP typecast_warning)
+  SEXP CtanhBMIP(SEXP inAddr, SEXP typecast_warning)
   {
     BigMatrix *pInMat = reinterpret_cast<BigMatrix*>(
       R_ExternalPtrAddr(inAddr));
     
     // Not sure if there is a better way to do these function calls
     if (pInMat->separated_columns() ) {
-      CALL_logBMIP_1(SepMatrixAccessor)
+      CALL_tanhBMIP_1(SepMatrixAccessor)
     }
     else
     {
-      CALL_logBMIP_1(MatrixAccessor)
+      CALL_tanhBMIP_1(MatrixAccessor)
+    }
+
+    return R_NilValue;
+  }
+  
+  #define CALL_coshBM_2(IN_CTYPE, IN_ACCESSOR, OUT_ACCESSOR) \
+    switch(pOutMat->matrix_type()) \
+    { \
+      case 4: \
+        coshBM<IN_CTYPE, IN_ACCESSOR<IN_CTYPE>, int, OUT_ACCESSOR<int> >( \
+          pInMat, pOutMat); \
+        break; \
+      case 8: \
+        coshBM<IN_CTYPE, IN_ACCESSOR<IN_CTYPE>, double, OUT_ACCESSOR<double> >( \
+          pInMat, pOutMat); \
+        break; \
+    }
+
+  #define CALL_coshBM_1(IN_ACCESSOR, OUT_ACCESSOR) \
+    switch(pInMat->matrix_type()) \
+    { \
+      case 4: \
+        CALL_coshBM_2(int, IN_ACCESSOR, OUT_ACCESSOR) \
+        break; \
+      case 8: \
+        CALL_coshBM_2(double, IN_ACCESSOR, OUT_ACCESSOR) \
+        break; \
+    }
+      
+  SEXP CcoshBM(SEXP inAddr, SEXP outAddr, SEXP typecast_warning)
+  {
+    BigMatrix *pInMat = reinterpret_cast<BigMatrix*>(
+      R_ExternalPtrAddr(inAddr));
+    BigMatrix *pOutMat = reinterpret_cast<BigMatrix*>(
+      R_ExternalPtrAddr(outAddr));
+    
+    if ((pOutMat->matrix_type() < pInMat->matrix_type()) & 
+      (LOGICAL_VALUE(typecast_warning) == (Rboolean)TRUE))
+    {
+      string type_names[9] = {
+        "", "char", "short", "", "integer", "", "", "", "double"};
+      
+      std::string warnMsg = string("Assignment will down cast from ") + 
+        type_names[pInMat->matrix_type()] + string(" to ") + 
+        type_names[pOutMat->matrix_type()] + string("\n") + 
+        string("Hint: To remove this warning type: ") + 
+        string("options(bigmemory.typecast.warning=FALSE)");
+      Rf_warning(warnMsg.c_str());
+    }
+    
+    // Not sure if there is a better way to do these function calls
+    if (pInMat->separated_columns() && pOutMat->separated_columns()) {
+      CALL_coshBM_1(SepMatrixAccessor, SepMatrixAccessor)
+    }
+    else if(pInMat->separated_columns() && !(pOutMat->separated_columns()))
+    {
+      CALL_coshBM_1(SepMatrixAccessor, MatrixAccessor)
+    }
+    else if(!(pInMat->separated_columns()) && pOutMat->separated_columns())
+    {
+      CALL_coshBM_1(MatrixAccessor, SepMatrixAccessor)
+    }
+    else
+    {
+      CALL_coshBM_1(MatrixAccessor, MatrixAccessor)
+    }
+
+    return R_NilValue;
+  }
+  
+  #define CALL_coshBMIP_2(IN_CTYPE, IN_ACCESSOR) \
+    switch(pInMat->matrix_type()) \
+    { \
+      case 4: \
+        coshBMIP<IN_CTYPE, IN_ACCESSOR<IN_CTYPE> >( \
+          pInMat); \
+        break; \
+      case 8: \
+        coshBMIP<IN_CTYPE, IN_ACCESSOR<IN_CTYPE> >( \
+          pInMat); \
+        break; \
+    }
+
+  #define CALL_coshBMIP_1(IN_ACCESSOR) \
+    switch(pInMat->matrix_type()) \
+    { \
+      case 4: \
+        CALL_coshBMIP_2(int, IN_ACCESSOR) \
+        break; \
+      case 8: \
+        CALL_coshBMIP_2(double, IN_ACCESSOR) \
+        break; \
+    }
+      
+  SEXP CcoshBMIP(SEXP inAddr, SEXP typecast_warning)
+  {
+    BigMatrix *pInMat = reinterpret_cast<BigMatrix*>(
+      R_ExternalPtrAddr(inAddr));
+    
+    // Not sure if there is a better way to do these function calls
+    if (pInMat->separated_columns() ) {
+      CALL_coshBMIP_1(SepMatrixAccessor)
+    }
+    else
+    {
+      CALL_coshBMIP_1(MatrixAccessor)
+    }
+
+    return R_NilValue;
+  }
+  
+  #define CALL_sinhBM_2(IN_CTYPE, IN_ACCESSOR, OUT_ACCESSOR) \
+    switch(pOutMat->matrix_type()) \
+    { \
+      case 4: \
+        sinhBM<IN_CTYPE, IN_ACCESSOR<IN_CTYPE>, int, OUT_ACCESSOR<int> >( \
+          pInMat, pOutMat); \
+        break; \
+      case 8: \
+        sinhBM<IN_CTYPE, IN_ACCESSOR<IN_CTYPE>, double, OUT_ACCESSOR<double> >( \
+          pInMat, pOutMat); \
+        break; \
+    }
+
+  #define CALL_sinhBM_1(IN_ACCESSOR, OUT_ACCESSOR) \
+    switch(pInMat->matrix_type()) \
+    { \
+      case 4: \
+        CALL_sinhBM_2(int, IN_ACCESSOR, OUT_ACCESSOR) \
+        break; \
+      case 8: \
+        CALL_sinhBM_2(double, IN_ACCESSOR, OUT_ACCESSOR) \
+        break; \
+    }
+      
+  SEXP CsinhBM(SEXP inAddr, SEXP outAddr, SEXP typecast_warning)
+  {
+    BigMatrix *pInMat = reinterpret_cast<BigMatrix*>(
+      R_ExternalPtrAddr(inAddr));
+    BigMatrix *pOutMat = reinterpret_cast<BigMatrix*>(
+      R_ExternalPtrAddr(outAddr));
+    
+    if ((pOutMat->matrix_type() < pInMat->matrix_type()) & 
+      (LOGICAL_VALUE(typecast_warning) == (Rboolean)TRUE))
+    {
+      string type_names[9] = {
+        "", "char", "short", "", "integer", "", "", "", "double"};
+      
+      std::string warnMsg = string("Assignment will down cast from ") + 
+        type_names[pInMat->matrix_type()] + string(" to ") + 
+        type_names[pOutMat->matrix_type()] + string("\n") + 
+        string("Hint: To remove this warning type: ") + 
+        string("options(bigmemory.typecast.warning=FALSE)");
+      Rf_warning(warnMsg.c_str());
+    }
+    
+    // Not sure if there is a better way to do these function calls
+    if (pInMat->separated_columns() && pOutMat->separated_columns()) {
+      CALL_sinhBM_1(SepMatrixAccessor, SepMatrixAccessor)
+    }
+    else if(pInMat->separated_columns() && !(pOutMat->separated_columns()))
+    {
+      CALL_sinhBM_1(SepMatrixAccessor, MatrixAccessor)
+    }
+    else if(!(pInMat->separated_columns()) && pOutMat->separated_columns())
+    {
+      CALL_sinhBM_1(MatrixAccessor, SepMatrixAccessor)
+    }
+    else
+    {
+      CALL_sinhBM_1(MatrixAccessor, MatrixAccessor)
+    }
+
+    return R_NilValue;
+  }
+  
+  #define CALL_sinhBMIP_2(IN_CTYPE, IN_ACCESSOR) \
+    switch(pInMat->matrix_type()) \
+    { \
+      case 4: \
+        sinhBMIP<IN_CTYPE, IN_ACCESSOR<IN_CTYPE> >( \
+          pInMat); \
+        break; \
+      case 8: \
+        sinhBMIP<IN_CTYPE, IN_ACCESSOR<IN_CTYPE> >( \
+          pInMat); \
+        break; \
+    }
+
+  #define CALL_sinhBMIP_1(IN_ACCESSOR) \
+    switch(pInMat->matrix_type()) \
+    { \
+      case 4: \
+        CALL_sinhBMIP_2(int, IN_ACCESSOR) \
+        break; \
+      case 8: \
+        CALL_sinhBMIP_2(double, IN_ACCESSOR) \
+        break; \
+    }
+      
+  SEXP CsinhBMIP(SEXP inAddr, SEXP typecast_warning)
+  {
+    BigMatrix *pInMat = reinterpret_cast<BigMatrix*>(
+      R_ExternalPtrAddr(inAddr));
+    
+    // Not sure if there is a better way to do these function calls
+    if (pInMat->separated_columns() ) {
+      CALL_sinhBMIP_1(SepMatrixAccessor)
+    }
+    else
+    {
+      CALL_sinhBMIP_1(MatrixAccessor)
     }
 
     return R_NilValue;
