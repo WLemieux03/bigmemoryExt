@@ -46,6 +46,22 @@ void IntSubtractBM(BigMatrix *pInMat, BigMatrix *pOutMat, int value_)
   return;
 }
 
+template<typename in_CType, typename in_BMAccessorType, 
+  typename out_CType, typename out_BMAccessorType>
+void IntAddBM(BigMatrix *pInMat, BigMatrix *pOutMat, int value_)
+{
+  in_BMAccessorType inMat( *pInMat );
+  out_BMAccessorType outMat( *pOutMat );
+  
+  for(index_type i=0; i < pInMat->nrow(); i++) {
+    for(index_type j=0; j < pInMat->ncol(); j++){
+      outMat[j][i] = value_ + inMat[j][i];
+    }
+  }
+  
+  return;
+}
+
 template<typename in_CType, typename in_BMAccessorType,
   typename out_CType, typename out_BMAccessorType>
 void powBM(BigMatrix *pInMat, BigMatrix *pOutMat, double value)
@@ -274,7 +290,7 @@ extern "C"
         break; \
     }
       
-  SEXP CsubtIntBM(SEXP inAddr, SEXP outAddr, SEXP typecast_warning, SEXP value_)
+  SEXP CsubtIntBM(SEXP inAddr, SEXP outAddr, SEXP value_, SEXP typecast_warning)
   {
     BigMatrix *pInMat = reinterpret_cast<BigMatrix*>(
       R_ExternalPtrAddr(inAddr));
@@ -312,6 +328,73 @@ extern "C"
     else
     {
       CALL_intSBM_1(MatrixAccessor, MatrixAccessor, value)
+    }
+
+    return R_NilValue;
+  }
+  
+  #define CALL_intAddBM_2(IN_CTYPE, IN_ACCESSOR, OUT_ACCESSOR, value) \
+    switch(pOutMat->matrix_type()) \
+    { \
+      case 4: \
+        IntAddBM<IN_CTYPE, IN_ACCESSOR<IN_CTYPE>, int, OUT_ACCESSOR<int> >( \
+          pInMat, pOutMat, value); \
+        break; \
+      case 8: \
+        IntAddBM<IN_CTYPE, IN_ACCESSOR<IN_CTYPE>, double, OUT_ACCESSOR<double> >( \
+          pInMat, pOutMat, value); \
+        break; \
+    }
+
+  #define CALL_intAddBM_1(IN_ACCESSOR, OUT_ACCESSOR, value) \
+    switch(pInMat->matrix_type()) \
+    { \
+      case 4: \
+        CALL_intAddBM_2(int, IN_ACCESSOR, OUT_ACCESSOR, value) \
+        break; \
+      case 8: \
+        CALL_intAddBM_2(double, IN_ACCESSOR, OUT_ACCESSOR, value) \
+        break; \
+    }
+      
+  SEXP CaddIntBM(SEXP inAddr, SEXP outAddr, SEXP value_, SEXP typecast_warning)
+  {
+    BigMatrix *pInMat = reinterpret_cast<BigMatrix*>(
+      R_ExternalPtrAddr(inAddr));
+    BigMatrix *pOutMat = reinterpret_cast<BigMatrix*>(
+      R_ExternalPtrAddr(outAddr));
+    
+    if ((pOutMat->matrix_type() < pInMat->matrix_type()) & 
+      (LOGICAL_VALUE(typecast_warning) == (Rboolean)TRUE))
+    {
+      string type_names[9] = {
+        "", "char", "short", "", "integer", "", "", "", "double"};
+      
+      std::string warnMsg = string("Assignment will down cast from ") + 
+        type_names[pInMat->matrix_type()] + string(" to ") + 
+        type_names[pOutMat->matrix_type()] + string("\n") + 
+        string("Hint: To remove this warning type: ") + 
+        string("options(bigmemory.typecast.warning=FALSE)");
+      Rf_warning(warnMsg.c_str());
+    }
+    
+    int value = as<int>(value_);
+    
+    // Not sure if there is a better way to do these function calls
+    if (pInMat->separated_columns() && pOutMat->separated_columns()) {
+      CALL_intAddBM_1(SepMatrixAccessor, SepMatrixAccessor, value)
+    }
+    else if(pInMat->separated_columns() && !(pOutMat->separated_columns()))
+    {
+      CALL_intAddBM_1(SepMatrixAccessor, MatrixAccessor, value)
+    }
+    else if(!(pInMat->separated_columns()) && pOutMat->separated_columns())
+    {
+      CALL_intAddBM_1(MatrixAccessor, SepMatrixAccessor, value)
+    }
+    else
+    {
+      CALL_intAddBM_1(MatrixAccessor, MatrixAccessor, value)
     }
 
     return R_NilValue;
