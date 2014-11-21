@@ -48,7 +48,7 @@ void IntSubtractBM(BigMatrix *pInMat, BigMatrix *pOutMat, int value_)
 
 template<typename in_CType, typename in_BMAccessorType,
   typename out_CType, typename out_BMAccessorType>
-void powBM(BigMatrix *pInMat, BigMatrix *pOutMat, int value)
+void powBM(BigMatrix *pInMat, BigMatrix *pOutMat, double value)
 {
   in_BMAccessorType inMat( *pInMat );
   out_BMAccessorType outMat( *pOutMat );
@@ -341,7 +341,7 @@ extern "C"
         break; \
     }
       
-  SEXP CpowBM(SEXP inAddr, SEXP outAddr, SEXP typecast_warning, SEXP value)
+  SEXP CpowBM(SEXP inAddr, SEXP outAddr, SEXP value, SEXP typecast_warning)
   {
     BigMatrix *pInMat = reinterpret_cast<BigMatrix*>(
       R_ExternalPtrAddr(inAddr));
@@ -362,7 +362,7 @@ extern "C"
       Rf_warning(warnMsg.c_str());
     }
     
-    int val = as<int>(value);
+    double val = as<double>(value);
     
     // Not sure if there is a better way to do these function calls
     if (pInMat->separated_columns() && pOutMat->separated_columns()) {
@@ -414,7 +414,7 @@ extern "C"
       R_ExternalPtrAddr(inAddr));
     
     // Convert R numeric to C++ integer
-    int val = as<int>(value);
+    int val = as<double>(value);
     
     // Not sure if there is a better way to do these function calls
     if (pInMat->separated_columns() ) {
