@@ -383,7 +383,10 @@ powBM <- function(x, value,
     stop(paste("Too many rows to copy at this point in time;",
                "this may be fixed in the future."))
   }
-  if (is.null(type)) type <- typeof(x)
+  
+  if (is.null(type)){
+    type <- "double"
+  } 
   if (is.big.matrix(x)) {
     if (is.null(separated)) separated <- is.separated(x)
   } else {
@@ -397,7 +400,7 @@ powBM <- function(x, value,
     cols1 <- seq(ncol(x))
     y <- x
   }
-  
+
   if (is.null(z)) {
     z <- big.matrix(nrow=nrow(y), ncol=length(cols1), type=type, init=NULL,
                     dimnames=dimnames(y), separated=separated,
@@ -406,8 +409,7 @@ powBM <- function(x, value,
                     binarydescriptor=binarydescriptor, shared)
   }
 
-  .Call("CpowBM", y@address, z@address, as.double(seq(nrow(y))), as.double(cols1), getOption("bigmemory.typecast.warning"),
-        as.integer(value))  
+  .Call("CpowBM", y@address, z@address, as.double(value), getOption("bigmemory.typecast.warning"))  
   
   return(z)
 }
