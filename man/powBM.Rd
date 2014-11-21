@@ -48,4 +48,7 @@ This generates a new \code{"big.matrix"} object whereby each element has been ta
 of \code{"value"}.  This function should only need to be used if the new matrix must be filebacked as the
 NULL call is applied in the \code{"^"} method.
 }
+\seealso{
+\code{\link[bigmemoryExt]{powBMIP}} for in-place power
+}
 

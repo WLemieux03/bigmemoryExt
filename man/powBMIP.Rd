@@ -19,7 +19,8 @@ WARNING!!! This replaces the original matrix.
 }
 \details{
 This function takes each element of a \code{"big.matrix"} to the specified power.
-This function should only need to be used if the new matrix must be filebacked as the
-NULL call is applied in the \code{"^"} method.
+}
+\seealso{
+\code{\link[base]{^}} for new big.matrix object \code{\link[bigmemoryExt]{powBM}} for more flexible new big.matrix
 }
 
