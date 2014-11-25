@@ -19,6 +19,8 @@ multiplyMatrixBM(x, y, x.cols = NULL, x.rows = NULL, y.cols = NULL,
 
 \item{y.cols}{Possible subset of columns for the transpose; could be numeric, named, or logical}
 
+\item{y.rows}{Possible subset of rows for the transpose; could be numeric, named, or logical}
+
 \item{z}{Optional destinitation object (matrix or big.matrix); if not specified, a big.matrix will be created}
 
 \item{type}{preferably specified (e.g. "integer", "double", etc.)}
@@ -40,8 +42,6 @@ for subsequent use with \code{\link[bigmemory]{attach.big.matrix}}; if NULL of F
 \item{shared}{TRUE by default, and always TRUE if the big.matrix is file-backed. For a non-filebacked big.matrix,
 shared=FALSE uses non-shared memory, which can be more stable for large (say, >50% of RAM) objects. Shared memory
 allocation can sometimes fail in such cases due to exhausted shared-memory resources in the system.}
-
-\item{y.}{rows Possible subset of rows for the transpose; could be numeric, named, or logical}
 }
 \value{
 a \code{"big.matrix"} of type double

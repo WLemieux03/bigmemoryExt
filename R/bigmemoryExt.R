@@ -131,185 +131,7 @@ iptBM <- function(x, direction)
   )
 }
 
-# I would like to have the following 'subtractIntBM' converted an 'Arith' method but it would currently
-# conflict with bigalgebra where the signature recognizes numeric but expects a matrix
-# of equivalent size.  As such, a simple call like '1-BM' results in the following error:
-# Error in check_matrix(X, classes = c("big.matrix", "matrix", "vector",  : 
-#   The matrix type is not correct
 
-#' @title Subtract a "big.matrix" from an integer
-#' @description This was written to provide subtraction capabilities to big.matrix objects.  The \code{"daxpy"}
-#' function only works with equal size matrices.  To avoid making another large matrix, this a wrapper of C++ around the 
-#' big.matrix object to subtract each element from the provided value.  It likely could use further optimization.
-#' It also includes column and row selection in addition to optionally filebacking.
-#' @param x A \code{"big.matrix"}
-#' @param value A numeric value (e.g. "2.5", "1L")
-#' @param cols Possible subset of columns for the transpose; could be numeric, named, or logical
-#' @param rows Possible subset of rows for the transpose; could be numeric, named, or logical
-#' @param y Optional destinitation object (matrix or big.matrix); if not specified, a big.matrix will be created
-#' @param type preferably specified (e.g. "integer", "double", etc.)
-#' @param separated use separated column organization of the data instead of column-major organization; 
-#' use with caution if the number of columns is large.
-#' @param backingfile the root name for the file(s) for the cache of x.
-#' @param backingpath the path to the directory containing the file backing cache
-#' @param descriptorfile the name of the file to hold the backingfile description, for subsequent use with 
-#' \code{\link[bigmemory]{attach.big.matrix}}; if NULL, the backingfile is used as the root part of the descriptor file name. 
-#' The descriptor file is placed in the same directory as the backing files.
-#' @param binarydescriptor the flag to specify if the binary RDS format should be used for the backingfile description, 
-#' for subsequent use with \code{\link[bigmemory]{attach.big.matrix}}; if NULL of FALSE, the dput() file format is used.
-#' @param shared TRUE by default, and always TRUE if the big.matrix is file-backed. For a non-filebacked big.matrix, 
-#' shared=FALSE uses non-shared memory, which can be more stable for large (say, >50% of RAM) objects. Shared memory 
-#' allocation can sometimes fail in such cases due to exhausted shared-memory resources in the system.
-#' @return a \code{"big.matrix"}
-#' @export
-subtractIntBM <- function(x, value, cols=NULL, rows=NULL, 
-                      y=NULL, type=NULL, separated=NULL,
-                      backingfile=NULL, backingpath=NULL,
-                      descriptorfile=NULL, binarydescriptor=FALSE,
-                      shared=TRUE)
-{
-  cols <- cleanupcols(cols, ncol(x), colnames(x))
-  rows <- cleanuprows(rows, nrow(x), rownames(x))
-  if (nrow(x) > 2^31-1)
-    stop(paste("Too many rows to copy at this point in time;",
-               "this may be fixed in the future."))
-  if (is.null(type)) type <- typeof(x)
-  if (is.big.matrix(x)) {
-    if (is.null(separated)) separated <- is.separated(x)
-  } else {
-    separated <- FALSE
-  }
-  if (is.null(y)) {
-    y <- big.matrix(nrow=length(rows), ncol=length(cols), type=type, init=NULL,
-                    dimnames=dimnames(x), separated=separated,
-                    backingfile=backingfile, backingpath=backingpath,
-                    descriptorfile=descriptorfile,
-                    binarydescriptor=binarydescriptor, shared)
-  }
-  if (is.big.matrix(x) && is.big.matrix(y))
-    .Call("CsubtIntBM", x@address, y@address, as.integer(value),
-          getOption("bigmemory.typecast.warning"))
-  else
-    for (i in 1:length(cols)) y[,i] <- x[rows,cols[i]]
-  
-  return(y)
-}
-
-#' @title Add an integer to a "big.matrix"
-#' @description This was written to provide addition capabilities to big.matrix objects.  The \code{"daxpy"}
-#' function only works with equal size matrices.  To avoid making another large matrix, this a wrapper of C++ around the 
-#' big.matrix object to subtract each element from the provided value.  It likely could use further optimization.
-#' It also includes column and row selection in addition to optionally filebacking.
-#' @param x A \code{"big.matrix"}
-#' @param value Currently only accepts integers (e.g. "1L")
-#' @param cols Possible subset of columns for the transpose; could be numeric, named, or logical
-#' @param rows Possible subset of rows for the transpose; could be numeric, named, or logical
-#' @param y Optional destinitation object (matrix or big.matrix); if not specified, a big.matrix will be created
-#' @param type preferably specified (e.g. "integer", "double", etc.)
-#' @param separated use separated column organization of the data instead of column-major organization; 
-#' use with caution if the number of columns is large.
-#' @param backingfile the root name for the file(s) for the cache of x.
-#' @param backingpath the path to the directory containing the file backing cache
-#' @param descriptorfile the name of the file to hold the backingfile description, for subsequent use with 
-#' \code{\link[bigmemory]{attach.big.matrix}}; if NULL, the backingfile is used as the root part of the descriptor file name. 
-#' The descriptor file is placed in the same directory as the backing files.
-#' @param binarydescriptor the flag to specify if the binary RDS format should be used for the backingfile description, 
-#' for subsequent use with \code{\link[bigmemory]{attach.big.matrix}}; if NULL of FALSE, the dput() file format is used.
-#' @param shared TRUE by default, and always TRUE if the big.matrix is file-backed. For a non-filebacked big.matrix, 
-#' shared=FALSE uses non-shared memory, which can be more stable for large (say, >50% of RAM) objects. Shared memory 
-#' allocation can sometimes fail in such cases due to exhausted shared-memory resources in the system.
-#' @return a \code{"big.matrix"}
-#' @export
-addIntBM <- function(x, value, cols=NULL, rows=NULL, 
-                          y=NULL, type=NULL, separated=NULL,
-                          backingfile=NULL, backingpath=NULL,
-                          descriptorfile=NULL, binarydescriptor=FALSE,
-                          shared=TRUE)
-{
-  cols <- cleanupcols(cols, ncol(x), colnames(x))
-  rows <- cleanuprows(rows, nrow(x), rownames(x))
-  if (nrow(x) > 2^31-1)
-    stop(paste("Too many rows to copy at this point in time;",
-               "this may be fixed in the future."))
-  if (is.null(type)) type <- typeof(x)
-  if (is.big.matrix(x)) {
-    if (is.null(separated)) separated <- is.separated(x)
-  } else {
-    separated <- FALSE
-  }
-  if (is.null(y)) {
-    y <- big.matrix(nrow=length(rows), ncol=length(cols), type=type, init=NULL,
-                    dimnames=dimnames(x), separated=separated,
-                    backingfile=backingfile, backingpath=backingpath,
-                    descriptorfile=descriptorfile,
-                    binarydescriptor=binarydescriptor, shared)
-  }
-  if (is.big.matrix(x) && is.big.matrix(y))
-    .Call("CaddIntBM", x@address, y@address, as.integer(value),
-          getOption("bigmemory.typecast.warning"))
-  else
-    for (i in 1:length(cols)) y[,i] <- x[rows,cols[i]]
-  
-  return(y)
-}
-
-
-#' @title Multiply a "big.matrix" by an numeric value
-#' @description This was written to provide multiplication capabilities to big.matrix objects.  To avoid making another 
-#' large matrix, this a wrapper of C++ around the big.matrix object to subtract each element from the provided value.  
-#' It likely could use further optimization. It also includes column and row selection in addition to optionally filebacking.
-#' @param x A \code{"big.matrix"}
-#' @param value Numeric value (e.g. "1L", "2.5")
-#' @param cols Possible subset of columns for the transpose; could be numeric, named, or logical
-#' @param rows Possible subset of rows for the transpose; could be numeric, named, or logical
-#' @param y Optional destinitation object (matrix or big.matrix); if not specified, a big.matrix will be created
-#' @param type preferably specified (e.g. "integer", "double", etc.)
-#' @param separated use separated column organization of the data instead of column-major organization; 
-#' use with caution if the number of columns is large.
-#' @param backingfile the root name for the file(s) for the cache of x.
-#' @param backingpath the path to the directory containing the file backing cache
-#' @param descriptorfile the name of the file to hold the backingfile description, for subsequent use with 
-#' \code{\link[bigmemory]{attach.big.matrix}}; if NULL, the backingfile is used as the root part of the descriptor file name. 
-#' The descriptor file is placed in the same directory as the backing files.
-#' @param binarydescriptor the flag to specify if the binary RDS format should be used for the backingfile description, 
-#' for subsequent use with \code{\link[bigmemory]{attach.big.matrix}}; if NULL of FALSE, the dput() file format is used.
-#' @param shared TRUE by default, and always TRUE if the big.matrix is file-backed. For a non-filebacked big.matrix, 
-#' shared=FALSE uses non-shared memory, which can be more stable for large (say, >50% of RAM) objects. Shared memory 
-#' allocation can sometimes fail in such cases due to exhausted shared-memory resources in the system.
-#' @return a \code{"big.matrix"} of type double
-#' @export
-multiplyIntBM <- function(x, value, cols=NULL, rows=NULL, 
-                        y=NULL, type=NULL, separated=NULL,
-                        backingfile=NULL, backingpath=NULL,
-                        descriptorfile=NULL, binarydescriptor=FALSE,
-                        shared=TRUE)
-{
-  cols <- cleanupcols(cols, ncol(x), colnames(x))
-  rows <- cleanuprows(rows, nrow(x), rownames(x))
-  if (nrow(x) > 2^31-1)
-    stop(paste("Too many rows to copy at this point in time;",
-               "this may be fixed in the future."))
-  if (is.null(type)) type <- typeof(x)
-  if (is.big.matrix(x)) {
-    if (is.null(separated)) separated <- is.separated(x)
-  } else {
-    separated <- FALSE
-  }
-  if (is.null(y)) {
-    y <- big.matrix(nrow=length(rows), ncol=length(cols), type=type, init=NULL,
-                    dimnames=dimnames(x), separated=separated,
-                    backingfile=backingfile, backingpath=backingpath,
-                    descriptorfile=descriptorfile,
-                    binarydescriptor=binarydescriptor, shared)
-  }
-  if (is.big.matrix(x) && is.big.matrix(y))
-    .Call("CMultiplyIntBM", x@address, y@address, as.integer(value),
-          getOption("bigmemory.typecast.warning"))
-  else
-    for (i in 1:length(cols)) y[,i] <- x[rows,cols[i]]
-  
-  return(y)
-}
 
 
 #' @title Divide a "big.matrix" by an numeric value
@@ -378,7 +200,7 @@ divideIntBM <- function(x, value, cols=NULL, rows=NULL,
 #' @param x.cols Possible subset of columns for the transpose; could be numeric, named, or logical
 #' @param x.rows Possible subset of rows for the transpose; could be numeric, named, or logical
 #' @param y.cols Possible subset of columns for the transpose; could be numeric, named, or logical
-#' @param y. rows Possible subset of rows for the transpose; could be numeric, named, or logical
+#' @param y.rows Possible subset of rows for the transpose; could be numeric, named, or logical
 #' @param z Optional destinitation object (matrix or big.matrix); if not specified, a big.matrix will be created
 #' @param type preferably specified (e.g. "integer", "double", etc.)
 #' @param separated use separated column organization of the data instead of column-major organization; 
@@ -468,7 +290,7 @@ divideMatrixBM <- function(x, y, x.cols=NULL, x.rows=NULL,
 #' @param x.cols Possible subset of columns for the transpose; could be numeric, named, or logical
 #' @param x.rows Possible subset of rows for the transpose; could be numeric, named, or logical
 #' @param y.cols Possible subset of columns for the transpose; could be numeric, named, or logical
-#' @param y. rows Possible subset of rows for the transpose; could be numeric, named, or logical
+#' @param y.rows Possible subset of rows for the transpose; could be numeric, named, or logical
 #' @param z Optional destinitation object (matrix or big.matrix); if not specified, a big.matrix will be created
 #' @param type preferably specified (e.g. "integer", "double", etc.)
 #' @param separated use separated column organization of the data instead of column-major organization; 
