@@ -80,6 +80,24 @@ void IntMultiplyBM(BigMatrix *pInMat, BigMatrix *pOutMat, double value_)
 
 template<typename in_CType, typename in_BMAccessorType, 
   typename out_CType, typename out_BMAccessorType>
+void MatrixMultiplyBM(BigMatrix *pInMat, BigMatrix *pInMat2, BigMatrix *pOutMat)
+{
+  in_BMAccessorType inMat( *pInMat );
+  in_BMAccessorType inMat2( *pInMat2 );
+  out_BMAccessorType outMat( *pOutMat );
+  
+  for(index_type i=0; i < pInMat->nrow(); i++) {
+    for(index_type j=0; j < pInMat->ncol(); j++){
+      outMat[j][i] =  (inMat[j][i] * inMat2[j][i]);
+    }
+  }
+  
+  return;
+}
+
+
+template<typename in_CType, typename in_BMAccessorType, 
+  typename out_CType, typename out_BMAccessorType>
 void IntDivisionBM(BigMatrix *pInMat, BigMatrix *pOutMat, double value_)
 {
   in_BMAccessorType inMat( *pInMat );
@@ -88,6 +106,39 @@ void IntDivisionBM(BigMatrix *pInMat, BigMatrix *pOutMat, double value_)
   for(index_type i=0; i < pInMat->nrow(); i++) {
     for(index_type j=0; j < pInMat->ncol(); j++){
       outMat[j][i] = value_ / inMat[j][i];
+    }
+  }
+  
+  return;
+}
+
+//template<typename in_CType, typename in_BMAccessorType, 
+//  typename out_CType, typename out_BMAccessorType>
+//void VectorDivisionBM(BigMatrix *pInMat, BigMatrix *pOutMat, NumericVector _vec)
+//{
+//  in_BMAccessorType inMat( *pInMat );
+//  out_BMAccessorType outMat( *pOutMat );
+//  
+//  for(index_type i=0; i < pInMat->nrow(); i++) {
+//    for(index_type j=0; j < pInMat->ncol(); j++){
+//      outMat[j][i] =  _vec[j]/ inMat[j][i];
+//    }
+//  }
+//  
+//  return;
+//}
+
+template<typename in_CType, typename in_BMAccessorType, 
+  typename out_CType, typename out_BMAccessorType>
+void MatrixDivisionBM(BigMatrix *pInMat, BigMatrix *pInMat2, BigMatrix *pOutMat)
+{
+  in_BMAccessorType inMat( *pInMat );
+  in_BMAccessorType inMat2( *pInMat2 );
+  out_BMAccessorType outMat( *pOutMat );
+  
+  for(index_type i=0; i < pInMat->nrow(); i++) {
+    for(index_type j=0; j < pInMat->ncol(); j++){
+      outMat[j][i] =  (inMat[j][i] / inMat2[j][i]);
     }
   }
   
@@ -213,7 +264,7 @@ void sinhBM(BigMatrix *pInMat, BigMatrix *pOutMat)
  * =====================================================================================
  */
 template<typename in_CType, typename in_BMAccessorType>
-void powBMIP(BigMatrix *pInMat, int value)
+void powBMIP(BigMatrix *pInMat, double value)
 {
   in_BMAccessorType inMat( *pInMat );
   
@@ -499,6 +550,84 @@ extern "C"
     return R_NilValue;
   }
   
+  #define CALL_MatrixDivisionBM_2(IN_CTYPE, IN_ACCESSOR, IN_ACCESSOR2, OUT_ACCESSOR) \
+    switch(pOutMat->matrix_type()) \
+    { \
+      case 4: \
+        MatrixDivisionBM<IN_CTYPE, IN_ACCESSOR<IN_CTYPE>, int, OUT_ACCESSOR<int> >( \
+          pInMat, pInMat2, pOutMat); \
+        break; \
+      case 8: \
+        MatrixDivisionBM<IN_CTYPE, IN_ACCESSOR<IN_CTYPE>, double, OUT_ACCESSOR<double> >( \
+          pInMat, pInMat2, pOutMat); \
+        break; \
+    }
+
+  #define CALL_MatrixDivisionBM_1(IN_ACCESSOR, IN_ACCESSOR2, OUT_ACCESSOR) \
+    switch(pInMat->matrix_type()) \
+    { \
+      case 4: \
+        CALL_MatrixDivisionBM_2(int, IN_ACCESSOR, IN_ACCESSOR2, OUT_ACCESSOR) \
+        break; \
+      case 8: \
+        CALL_MatrixDivisionBM_2(double, IN_ACCESSOR, IN_ACCESSOR2, OUT_ACCESSOR) \
+        break; \
+    }
+      
+  SEXP CDivisionMatrixBM(SEXP inAddr, SEXP inAddr2, SEXP outAddr, SEXP typecast_warning)
+  {
+    BigMatrix *pInMat = reinterpret_cast<BigMatrix*>(
+      R_ExternalPtrAddr(inAddr));
+    BigMatrix *pInMat2 = reinterpret_cast<BigMatrix*>(
+      R_ExternalPtrAddr(inAddr2));
+    BigMatrix *pOutMat = reinterpret_cast<BigMatrix*>(
+      R_ExternalPtrAddr(outAddr));
+    
+    if ((pOutMat->matrix_type() < pInMat->matrix_type()) & 
+      (LOGICAL_VALUE(typecast_warning) == (Rboolean)TRUE))
+    {
+      string type_names[9] = {
+        "", "char", "short", "", "integer", "", "", "", "double"};
+      
+      std::string warnMsg = string("Assignment will down cast from ") + 
+        type_names[pInMat->matrix_type()] + string(" to ") + 
+        type_names[pOutMat->matrix_type()] + string("\n") + 
+        string("Hint: To remove this warning type: ") + 
+        string("options(bigmemory.typecast.warning=FALSE)");
+      Rf_warning(warnMsg.c_str());
+    }
+    
+    // Not sure if there is a better way to do these function calls
+    if (pInMat->separated_columns() &&  pInMat2->separated_columns() && pOutMat->separated_columns() ) {
+      CALL_MatrixDivisionBM_1(SepMatrixAccessor, SepMatrixAccessor, SepMatrixAccessor)
+    }
+    else if(!(pInMat->separated_columns()) && pInMat2->separated_columns() && pOutMat->separated_columns())
+    {
+      CALL_MatrixDivisionBM_1(MatrixAccessor, SepMatrixAccessor, SepMatrixAccessor)
+    }
+    else if(pInMat->separated_columns() && !(pInMat2->separated_columns()) && pOutMat->separated_columns()){
+      CALL_MatrixDivisionBM_1(SepMatrixAccessor, MatrixAccessor, SepMatrixAccessor)
+    }
+    else if(pInMat->separated_columns() && pInMat2->separated_columns() && !(pOutMat->separated_columns()))
+    {
+      CALL_MatrixDivisionBM_1(SepMatrixAccessor, SepMatrixAccessor, MatrixAccessor)
+    }
+    else if(pInMat->separated_columns() && !(pInMat2->separated_columns()) && !(pOutMat->separated_columns()))
+    {
+      CALL_MatrixDivisionBM_1(SepMatrixAccessor, MatrixAccessor, MatrixAccessor)
+    }
+    else if(!(pInMat->separated_columns()) && pInMat2->separated_columns() && !(pOutMat->separated_columns()))
+    {
+      CALL_MatrixDivisionBM_1(MatrixAccessor, SepMatrixAccessor, MatrixAccessor)
+    }
+    else
+    {
+      CALL_MatrixDivisionBM_1(MatrixAccessor, MatrixAccessor, MatrixAccessor)
+    }
+
+    return R_NilValue;
+  }
+  
   #define CALL_intMultiplyBM_2(IN_CTYPE, IN_ACCESSOR, OUT_ACCESSOR, value) \
     switch(pOutMat->matrix_type()) \
     { \
@@ -561,6 +690,84 @@ extern "C"
     else
     {
       CALL_intMultiplyBM_1(MatrixAccessor, MatrixAccessor, value)
+    }
+
+    return R_NilValue;
+  }
+  
+  #define CALL_MatrixMultiplyBM_2(IN_CTYPE, IN_ACCESSOR, IN_ACCESSOR2, OUT_ACCESSOR) \
+    switch(pOutMat->matrix_type()) \
+    { \
+      case 4: \
+        MatrixMultiplyBM<IN_CTYPE, IN_ACCESSOR<IN_CTYPE>, int, OUT_ACCESSOR<int> >( \
+          pInMat, pInMat2, pOutMat); \
+        break; \
+      case 8: \
+        MatrixMultiplyBM<IN_CTYPE, IN_ACCESSOR<IN_CTYPE>, double, OUT_ACCESSOR<double> >( \
+          pInMat, pInMat2, pOutMat); \
+        break; \
+    }
+
+  #define CALL_MatrixMultiplyBM_1(IN_ACCESSOR, IN_ACCESSOR2, OUT_ACCESSOR) \
+    switch(pInMat->matrix_type()) \
+    { \
+      case 4: \
+        CALL_MatrixMultiplyBM_2(int, IN_ACCESSOR, IN_ACCESSOR2, OUT_ACCESSOR) \
+        break; \
+      case 8: \
+        CALL_MatrixMultiplyBM_2(double, IN_ACCESSOR, IN_ACCESSOR2, OUT_ACCESSOR) \
+        break; \
+    }
+      
+  SEXP CMultiplyMatrixBM(SEXP inAddr, SEXP inAddr2, SEXP outAddr, SEXP typecast_warning)
+  {
+    BigMatrix *pInMat = reinterpret_cast<BigMatrix*>(
+      R_ExternalPtrAddr(inAddr));
+    BigMatrix *pInMat2 = reinterpret_cast<BigMatrix*>(
+      R_ExternalPtrAddr(inAddr2));
+    BigMatrix *pOutMat = reinterpret_cast<BigMatrix*>(
+      R_ExternalPtrAddr(outAddr));
+    
+    if ((pOutMat->matrix_type() < pInMat->matrix_type()) & 
+      (LOGICAL_VALUE(typecast_warning) == (Rboolean)TRUE))
+    {
+      string type_names[9] = {
+        "", "char", "short", "", "integer", "", "", "", "double"};
+      
+      std::string warnMsg = string("Assignment will down cast from ") + 
+        type_names[pInMat->matrix_type()] + string(" to ") + 
+        type_names[pOutMat->matrix_type()] + string("\n") + 
+        string("Hint: To remove this warning type: ") + 
+        string("options(bigmemory.typecast.warning=FALSE)");
+      Rf_warning(warnMsg.c_str());
+    }
+    
+    // Not sure if there is a better way to do these function calls
+    if (pInMat->separated_columns() &&  pInMat2->separated_columns() && pOutMat->separated_columns() ) {
+      CALL_MatrixMultiplyBM_1(SepMatrixAccessor, SepMatrixAccessor, SepMatrixAccessor)
+    }
+    else if(!(pInMat->separated_columns()) && pInMat2->separated_columns() && pOutMat->separated_columns())
+    {
+      CALL_MatrixMultiplyBM_1(MatrixAccessor, SepMatrixAccessor, SepMatrixAccessor)
+    }
+    else if(pInMat->separated_columns() && !(pInMat2->separated_columns()) && pOutMat->separated_columns()){
+      CALL_MatrixMultiplyBM_1(SepMatrixAccessor, MatrixAccessor, SepMatrixAccessor)
+    }
+    else if(pInMat->separated_columns() && pInMat2->separated_columns() && !(pOutMat->separated_columns()))
+    {
+      CALL_MatrixMultiplyBM_1(SepMatrixAccessor, SepMatrixAccessor, MatrixAccessor)
+    }
+    else if(pInMat->separated_columns() && !(pInMat2->separated_columns()) && !(pOutMat->separated_columns()))
+    {
+      CALL_MatrixMultiplyBM_1(SepMatrixAccessor, MatrixAccessor, MatrixAccessor)
+    }
+    else if(!(pInMat->separated_columns()) && pInMat2->separated_columns() && !(pOutMat->separated_columns()))
+    {
+      CALL_MatrixMultiplyBM_1(MatrixAccessor, SepMatrixAccessor, MatrixAccessor)
+    }
+    else
+    {
+      CALL_MatrixMultiplyBM_1(MatrixAccessor, MatrixAccessor, MatrixAccessor)
     }
 
     return R_NilValue;

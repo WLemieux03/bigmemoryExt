@@ -30,6 +30,19 @@ setMethod("Arith", c(e1="numeric", e2="big.matrix"),
 )
 
 #' @export
+setMethod("Arith", c(e1="big.matrix", e2="big.matrix"),
+          function(e1,e2)
+          {
+            op = .Generic[[1]]
+            switch(op,
+                   `/` = divideMatrixBM(e1, e2, type="double"),
+                   `*` = multiplyMatrixBM(e1, e2, type="double"),
+                   stop("Undefined operation")
+            )
+          }
+)
+
+#' @export
 setMethod("Math", c(x="big.matrix"),
           function(x)
           {

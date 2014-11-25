@@ -369,6 +369,185 @@ divideIntBM <- function(x, value, cols=NULL, rows=NULL,
   return(y)
 }
 
+#' @title Divide a "big.matrix" by another "big.matrix"
+#' @description This was written to provide division capabilities to big.matrix objects.  To avoid making another 
+#' large matrix, this a wrapper of C++ around the big.matrix object to subtract each element from the provided value.  
+#' It likely could use further optimization. It also includes column and row selection in addition to optionally filebacking.
+#' @param x A \code{"big.matrix"}
+#' @param y A \code{"big.matrix"}
+#' @param x.cols Possible subset of columns for the transpose; could be numeric, named, or logical
+#' @param x.rows Possible subset of rows for the transpose; could be numeric, named, or logical
+#' @param y.cols Possible subset of columns for the transpose; could be numeric, named, or logical
+#' @param y. rows Possible subset of rows for the transpose; could be numeric, named, or logical
+#' @param z Optional destinitation object (matrix or big.matrix); if not specified, a big.matrix will be created
+#' @param type preferably specified (e.g. "integer", "double", etc.)
+#' @param separated use separated column organization of the data instead of column-major organization; 
+#' use with caution if the number of columns is large.
+#' @param backingfile the root name for the file(s) for the cache of x.
+#' @param backingpath the path to the directory containing the file backing cache
+#' @param descriptorfile the name of the file to hold the backingfile description, for subsequent use with 
+#' \code{\link[bigmemory]{attach.big.matrix}}; if NULL, the backingfile is used as the root part of the descriptor file name. 
+#' The descriptor file is placed in the same directory as the backing files.
+#' @param binarydescriptor the flag to specify if the binary RDS format should be used for the backingfile description, 
+#' for subsequent use with \code{\link[bigmemory]{attach.big.matrix}}; if NULL of FALSE, the dput() file format is used.
+#' @param shared TRUE by default, and always TRUE if the big.matrix is file-backed. For a non-filebacked big.matrix, 
+#' shared=FALSE uses non-shared memory, which can be more stable for large (say, >50% of RAM) objects. Shared memory 
+#' allocation can sometimes fail in such cases due to exhausted shared-memory resources in the system.
+#' @return a \code{"big.matrix"} of type double
+#' @export
+divideMatrixBM <- function(x, y, x.cols=NULL, x.rows=NULL, 
+                        y.cols=NULL, y.rows=NULL,
+                        z=NULL, type=NULL, separated=NULL,
+                        backingfile=NULL, backingpath=NULL,
+                        descriptorfile=NULL, binarydescriptor=FALSE,
+                        shared=TRUE)
+{
+  
+  if(typeof(x) != "double" | typeof(y) != "double"){
+    stop("Error: big.matrix types must be 'double'")
+  }
+  
+  # subsetting matrices
+  cols <- cleanupcols(x.cols, ncol(x), colnames(x))
+  cols2 <- cleanupcols(y.cols, ncol(y), colnames(y))
+  rows <- cleanuprows(x.rows, nrow(x), rownames(x))
+  rows2 <- cleanuprows(y.rows, nrow(y), rownames(y))
+  
+  if(length(cols) != length(cols2)){
+    stop("Error: number of columns not equal between matrices")
+  }
+  if(length(rows) != length(rows2)){
+    stop("Error: number of rows not equal between matrices")
+  }
+
+  if (nrow(x) > 2^31-1)
+    stop(paste("Too many rows to copy at this point in time;",
+               "this may be fixed in the future."))
+  if (is.null(type)) type <- typeof(x)
+  if (is.big.matrix(x)) {
+    if (is.null(separated)) separated <- is.separated(x)
+  } else {
+    separated <- FALSE
+  }
+  
+  # subsetting matrices
+  if(length(cols) != ncol(x) | length(rows) != nrow(x)){
+    xs <- deepcopy(x, cols=cols, rows=rows)
+  }else{
+    xs <- x
+  }
+
+  if(length(cols2) != ncol(y) | length(rows2) != nrow(y)){
+    ys <- deepcopy(y, cols=cols2, rows=rows2)
+  }else{
+    ys <- y
+  }
+
+  
+  if (is.null(z)) {
+    z <- big.matrix(nrow=length(rows), ncol=length(cols), type=type, init=NULL,
+                    dimnames=dimnames(x), separated=separated,
+                    backingfile=backingfile, backingpath=backingpath,
+                    descriptorfile=descriptorfile,
+                    binarydescriptor=binarydescriptor, shared)
+  }
+  
+  .Call("CDivisionMatrixBM", xs@address, ys@address, z@address,
+        getOption("bigmemory.typecast.warning"))
+  
+  return(z)
+}
+
+
+#' @title Multiply a "big.matrix" by another "big.matrix"
+#' @description This was written to provide multiplication capabilities to big.matrix objects.  To avoid making another 
+#' large matrix, this a wrapper of C++ around the big.matrix object to subtract each element from the provided value.  
+#' It likely could use further optimization. It also includes column and row selection in addition to optionally filebacking.
+#' @param x A \code{"big.matrix"}
+#' @param y A \code{"big.matrix"}
+#' @param x.cols Possible subset of columns for the transpose; could be numeric, named, or logical
+#' @param x.rows Possible subset of rows for the transpose; could be numeric, named, or logical
+#' @param y.cols Possible subset of columns for the transpose; could be numeric, named, or logical
+#' @param y. rows Possible subset of rows for the transpose; could be numeric, named, or logical
+#' @param z Optional destinitation object (matrix or big.matrix); if not specified, a big.matrix will be created
+#' @param type preferably specified (e.g. "integer", "double", etc.)
+#' @param separated use separated column organization of the data instead of column-major organization; 
+#' use with caution if the number of columns is large.
+#' @param backingfile the root name for the file(s) for the cache of x.
+#' @param backingpath the path to the directory containing the file backing cache
+#' @param descriptorfile the name of the file to hold the backingfile description, for subsequent use with 
+#' \code{\link[bigmemory]{attach.big.matrix}}; if NULL, the backingfile is used as the root part of the descriptor file name. 
+#' The descriptor file is placed in the same directory as the backing files.
+#' @param binarydescriptor the flag to specify if the binary RDS format should be used for the backingfile description, 
+#' for subsequent use with \code{\link[bigmemory]{attach.big.matrix}}; if NULL of FALSE, the dput() file format is used.
+#' @param shared TRUE by default, and always TRUE if the big.matrix is file-backed. For a non-filebacked big.matrix, 
+#' shared=FALSE uses non-shared memory, which can be more stable for large (say, >50% of RAM) objects. Shared memory 
+#' allocation can sometimes fail in such cases due to exhausted shared-memory resources in the system.
+#' @return a \code{"big.matrix"} of type double
+#' @export
+multiplyMatrixBM <- function(x, y, x.cols=NULL, x.rows=NULL, 
+                           y.cols=NULL, y.rows=NULL,
+                           z=NULL, type=NULL, separated=NULL,
+                           backingfile=NULL, backingpath=NULL,
+                           descriptorfile=NULL, binarydescriptor=FALSE,
+                           shared=TRUE)
+{
+  
+  if(typeof(x) != "double" | typeof(y) != "double"){
+    stop("Error: big.matrix types must be 'double'")
+  }
+  
+  # subsetting matrices
+  cols <- cleanupcols(x.cols, ncol(x), colnames(x))
+  cols2 <- cleanupcols(y.cols, ncol(y), colnames(y))
+  rows <- cleanuprows(x.rows, nrow(x), rownames(x))
+  rows2 <- cleanuprows(y.rows, nrow(y), rownames(y))
+  
+  if(length(cols) != length(cols2)){
+    stop("Error: number of columns not equal between matrices")
+  }
+  if(length(rows) != length(rows2)){
+    stop("Error: number of rows not equal between matrices")
+  }
+  
+  if (nrow(x) > 2^31-1)
+    stop(paste("Too many rows to copy at this point in time;",
+               "this may be fixed in the future."))
+  if (is.null(type)) type <- typeof(x)
+  if (is.big.matrix(x)) {
+    if (is.null(separated)) separated <- is.separated(x)
+  } else {
+    separated <- FALSE
+  }
+  
+  # subsetting matrices
+  if(length(cols) != ncol(x) | length(rows) != nrow(x)){
+    xs <- deepcopy(x, cols=cols, rows=rows)
+  }else{
+    xs <- x
+  }
+  
+  if(length(cols2) != ncol(y) | length(rows2) != nrow(y)){
+    ys <- deepcopy(y, cols=cols2, rows=rows2)
+  }else{
+    ys <- y
+  }
+  
+  
+  if (is.null(z)) {
+    z <- big.matrix(nrow=length(rows), ncol=length(cols), type=type, init=NULL,
+                    dimnames=dimnames(x), separated=separated,
+                    backingfile=backingfile, backingpath=backingpath,
+                    descriptorfile=descriptorfile,
+                    binarydescriptor=binarydescriptor, shared)
+  }
+  
+  .Call("CMultiplyMatrixBM", xs@address, ys@address, z@address,
+        getOption("bigmemory.typecast.warning"))
+  
+  return(z)
+}
+
 #' @title cbind functionality for class "big.matrix"
 #' @description This is used to bind columns to big.matrix objects, with the new copy optionally filebacked
 #' @param x A \code{"big.matrix"}
@@ -602,6 +781,11 @@ powBMIP <- function(x, value)
   if(!is.big.matrix(x)){
     stop("Error: x is not of type 'big.matrix'")
   }
+  
+  if(!typeof(x) == "double"){
+    stop("Error: the 'big.matrix' x must be of type 'double'")
+  }
+  
   if(!is.numeric(value) & !is.integer(value)){
     stop("Erorr: value must be of type 'integer' or 'numeric'")
   }
