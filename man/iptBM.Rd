@@ -3,7 +3,7 @@
 \alias{iptBM}
 \title{'Big.Matrix' In-Place-Transpose}
 \usage{
-iptBM(x, direction)
+iptBM(x)
 }
 \arguments{
 \item{x}{A \code{"big.matrix"}}

@@ -33,9 +33,6 @@ using namespace std;
  */
 
 
-
-
-
 template<typename in_CType, typename in_BMAccessorType, 
   typename out_CType, typename out_BMAccessorType>
 void MatrixMultiplyBM(BigMatrix *pInMat, BigMatrix *pInMat2, BigMatrix *pOutMat)

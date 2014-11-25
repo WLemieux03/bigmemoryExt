@@ -112,23 +112,23 @@ transposeBM <- function(x, cols=NULL, rows=NULL,
 #' @return Nothing, the \code{"big.matrix"} object has been modified.
 #' @example Examples/iptExample.R
 #' @export
-iptBM <- function(x, direction)
+iptBM <- function(x)
 {
   if(!is.big.matrix(x)){
     stop("Error: x must be of class 'big.matrix'")
-  }
-  if(!direction %in% c("r2c", "c2r")){
-    stop("Error: 'direction' must by 'r2c' or 'c2r'.")
   }
   
   # Call in-place-transpose
   .Call('CIPTMatrix', x@address)
   
+  diff <- abs(ncol(x) - nrow(x))
+  
   # resize big.matrix to transpose dimensions
-  switch(direction,
-    c2r = resizeBM(x, -1, 1),
-    r2c = resizeBM(x, 1, -1)
-  )
+  if(nrow(x) > ncol(x)){
+    resizeBM(x, -diff, diff)
+  }else{
+    resizeBM(x, diff, -diff)
+  }
 }
 
 
