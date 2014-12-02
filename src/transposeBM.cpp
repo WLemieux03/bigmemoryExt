@@ -20,9 +20,6 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
-//#include <Rcpp.h>
-//
-//using namespace Rcpp;
 using namespace std;
 
 /* 
