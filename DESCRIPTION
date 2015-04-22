@@ -13,4 +13,4 @@ Imports:
 Depends:
     BH,
     bigmemory
-LinkingTo: BH, bigmemory
+LinkingTo: BH, bigmemory, Rcpp
