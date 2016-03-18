@@ -8,6 +8,8 @@
 
 #include <boost/lexical_cast.hpp>
 
+#include <Rcpp.h>
+
 #include "bigmemory/BigMatrix.h"
 #include "bigmemory/MatrixAccessor.hpp"
 #include "bigmemory/util.h"
@@ -16,7 +18,7 @@
 #include <stdio.h>
 #include <R.h>
 #include <Rinternals.h>
-#include <Rdefines.h>
+// #include <Rdefines.h>
 #include <stdlib.h>
 #include <sys/types.h>
 
@@ -37,8 +39,8 @@ void transposeBM(BigMatrix *pInMat, BigMatrix *pOutMat, SEXP rowInds, SEXP colIn
   in_BMAccessorType inMat( *pInMat );
   out_BMAccessorType outMat( *pOutMat );
   
-  index_type nRows = GET_LENGTH(rowInds);
-  index_type nCols = GET_LENGTH(colInds);
+  index_type nRows = pInMat->nrow();
+  index_type nCols = pInMat->ncol();
   
   if (nRows != pOutMat->ncol())
     Rf_error("length of row indices does not equal # of cols in new matrix");
@@ -113,7 +115,7 @@ extern "C"
       R_ExternalPtrAddr(outAddr));
     
     if ((pOutMat->matrix_type() < pInMat->matrix_type()) & 
-      (LOGICAL_VALUE(typecast_warning) == (Rboolean)TRUE))
+      (Rcpp::as<bool>(typecast_warning) == (Rboolean)TRUE))
     {
       string type_names[9] = {
         "", "char", "short", "", "integer", "", "", "", "double"};

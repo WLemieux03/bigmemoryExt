@@ -7,6 +7,8 @@
 
 #include <boost/lexical_cast.hpp>
 
+#include <Rcpp.h>
+
 #include "bigmemory/BigMatrix.h"
 #include "bigmemory/MatrixAccessor.hpp"
 #include "bigmemory/util.h"
@@ -15,9 +17,10 @@
 #include <stdio.h>
 #include <R.h>
 #include <Rinternals.h>
-#include <Rdefines.h>
+// #include <Rdefines.h>
 #include <stdlib.h>
 #include <sys/types.h>
+
 
 using namespace std;
 
