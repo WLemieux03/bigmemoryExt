@@ -279,3 +279,100 @@ cbindBMIP <- function(x, y, cols.y=NULL)
   
   # matrix modification message returned by 'resizeBM' so NULL return
 }
+
+
+#' @title rbind functionality for class "big.matrix"
+#' @description This is used to bind columns to big.matrix objects, with the new copy optionally filebacked
+#' @param x A \code{"big.matrix"}
+#' @param y Columns to append, accepts \code{"big.matrix"} and \code{"matrix"} in addition to 
+#' \code{"numeric"} and \code{"integer"} (e.g. "2.5", "1L")
+#' @param binding Binding location, "right" or "left"
+#' @param cols.x Possible subset of columns from the x object; could be numeric, named, or logical
+#' @param cols.y Possible subset of columns from the y object if a matrix type object otherwise ignored; 
+#' could be numeric, named, or logical
+#' @param z Optional destinitation object (matrix or big.matrix); if not specified, a big.matrix will be created
+#' @param type preferably specified (e.g. "integer", "double", etc.)
+#' @param separated use separated column organization of the data instead of column-major organization; 
+#' use with caution if the number of columns is large.
+#' @param backingfile the root name for the file(s) for the cache of x.
+#' @param backingpath the path to the directory containing the file backing cache
+#' @param descriptorfile the name of the file to hold the backingfile description, for subsequent use with 
+#' \code{\link[bigmemory]{attach.big.matrix}}; if NULL, the backingfile is used as the root part of the descriptor file name. 
+#' The descriptor file is placed in the same directory as the backing files.
+#' @param binarydescriptor the flag to specify if the binary RDS format should be used for the backingfile description, 
+#' for subsequent use with \code{\link[bigmemory]{attach.big.matrix}}; if NULL of FALSE, the dput() file format is used.
+#' @param shared TRUE by default, and always TRUE if the big.matrix is file-backed. For a non-filebacked big.matrix, 
+#' shared=FALSE uses non-shared memory, which can be more stable for large (say, >50% of RAM) objects. Shared memory 
+#' allocation can sometimes fail in such cases due to exhausted shared-memory resources in the system.
+#' @details This is simply a wrapper for \code{"big.matrix"} objects whereby a new \code{"big.matrix"} is
+#' initialized and subsequently filled with the submitted arguments (optionally filtered).
+#' @return a \code{"big.matrix"}
+#' @export
+rbindBM <- function(x, y, binding="right",
+                    rows.x=NULL, rows.y=NULL,
+                    z=NULL, type=NULL, separated=NULL,
+                    backingfile=NULL, backingpath=NULL,
+                    descriptorfile=NULL, binarydescriptor=FALSE,
+                    shared=TRUE)
+{
+  
+  if(class(y) == "big.matrix" | class(y) == "matrix"){
+    if(ncol(x) != ncol(y)){
+      stop(paste("The number of columns are not equal between matrices."))
+    }
+  }
+  
+  if (ncol(x) > 2^31-1)
+    stop(paste("Too many columns to copy at this point in time;",
+               "this may be fixed in the future."))
+  if (is.null(type)) type <- typeof(x)
+  if (is.big.matrix(x)) {
+    if (is.null(separated)) separated <- is.separated(x)
+  } else {
+    separated <- FALSE
+  }
+  
+  rows1 <- cleanuprows(rows.x, nrow(x), rownames(x))
+  
+  if(class(y) == "numeric" | class(y) == "integer"){
+    rows2 <- 1
+  }else{
+    rows2 <- cleanupcols(rows.y, nrow(y), rownames(y))    
+  }
+
+  
+  if (is.null(z)) {
+    z <- big.matrix(nrow=length(rows1)+length(rows2), ncol=ncol(x), type=type, init=NULL,
+                    dimnames=dimnames(x), separated=separated,
+                    backingfile=backingfile, backingpath=backingpath,
+                    descriptorfile=descriptorfile,
+                    binarydescriptor=binarydescriptor, shared)
+  }
+  
+  if(binding=="right"){
+    z[,1:length(rows1)] = x[,c(rows1)]
+    
+    if(is.big.matrix(y) | is.matrix(y)){
+      z[,(length(rows1)+1):(length(rows1)+length(rows2))] = y[,c(rows2)]
+    }
+    else if(class(y) == "numeric" | class(y) == "integer"){
+      z[,(length(rows1)+1)] = y
+    }
+  }else{
+    if(binding == "left"){    
+      if(is.big.matrix(y) | is.matrix(y)){
+        z[,1:(length(rows2))] = y[,c(rows2)]
+      }
+      else if(class(y) == "numeric" | class(y) == "integer"){
+        z[,1] = y
+      }
+      
+      z[,(length(rows2)+1):(length(rows1)+length(rows2))] = x[,c(rows1)]
+    }else{
+      stop("binding variable not recognized, should be 'right' or 'left'")
+    }
+  }
+  
+  
+  return(z)
+}
