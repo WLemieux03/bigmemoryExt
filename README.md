@@ -21,5 +21,5 @@ library(devtools)
 install_github('cdeterman/bigmemory')
 
 # install bigmemoryExt
-install_github('cdeterman/bigmemoryExt')
+install_github('WLemieux03/bigmemoryExt')
 ```
