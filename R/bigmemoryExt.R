@@ -282,13 +282,13 @@ cbindBMIP <- function(x, y, cols.y=NULL)
 
 
 #' @title rbind functionality for class "big.matrix"
-#' @description This is used to bind columns to big.matrix objects, with the new copy optionally filebacked
+#' @description This is used to bind rows to big.matrix objects, with the new copy optionally filebacked
 #' @param x A \code{"big.matrix"}
-#' @param y Columns to append, accepts \code{"big.matrix"} and \code{"matrix"} in addition to 
+#' @param y Rows to append, accepts \code{"big.matrix"} and \code{"matrix"} in addition to 
 #' \code{"numeric"} and \code{"integer"} (e.g. "2.5", "1L")
 #' @param binding Binding location, "right" or "left"
-#' @param cols.x Possible subset of columns from the x object; could be numeric, named, or logical
-#' @param cols.y Possible subset of columns from the y object if a matrix type object otherwise ignored; 
+#' @param rows.x Possible subset of rows from the x object; could be numeric, named, or logical
+#' @param rows.y Possible subset of rows from the y object if a matrix type object otherwise ignored; 
 #' could be numeric, named, or logical
 #' @param z Optional destinitation object (matrix or big.matrix); if not specified, a big.matrix will be created
 #' @param type preferably specified (e.g. "integer", "double", etc.)
