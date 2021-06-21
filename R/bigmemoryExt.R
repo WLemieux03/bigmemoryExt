@@ -350,24 +350,24 @@ rbindBM <- function(x, y, binding="right",
   }
   
   if(binding=="right"){
-    z[,1:length(rows1)] = x[,c(rows1)]
+    z[1:length(rows1),] = x[c(rows1),]
     
     if(is.big.matrix(y) | is.matrix(y)){
-      z[,(length(rows1)+1):(length(rows1)+length(rows2))] = y[,c(rows2)]
+      z[(length(rows1)+1):(length(rows1)+length(rows2)),] = y[c(rows2),]
     }
     else if(class(y) == "numeric" | class(y) == "integer"){
-      z[,(length(rows1)+1)] = y
+      z[(length(rows1)+1),] = y
     }
   }else{
     if(binding == "left"){    
       if(is.big.matrix(y) | is.matrix(y)){
-        z[,1:(length(rows2))] = y[,c(rows2)]
+        z[1:(length(rows2)),] = y[c(rows2),]
       }
       else if(class(y) == "numeric" | class(y) == "integer"){
-        z[,1] = y
+        z[1,] = y
       }
       
-      z[,(length(rows2)+1):(length(rows1)+length(rows2))] = x[,c(rows1)]
+      z[(length(rows2)+1):(length(rows1)+length(rows2)),] = x[c(rows1),]
     }else{
       stop("binding variable not recognized, should be 'right' or 'left'")
     }
